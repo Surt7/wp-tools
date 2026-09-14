@@ -1,0 +1,22 @@
+# Environment files with actual secrets
+.env
+.env.local
+.env.*.local
+
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+wp-tools
+
+# Build and temp directories
+dist/
+bin/
+
+# IDE configurations
+.idea/
+.vscode/
+*.swp
+*.swo
