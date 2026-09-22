@@ -20,3 +20,9 @@ bin/
 .vscode/
 *.swp
 *.swo
+
+# Local device keys and certificates
+*.key
+*.Key
+*.crt
+enroll.json

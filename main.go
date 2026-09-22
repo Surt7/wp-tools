@@ -6,9 +6,11 @@ import (
 	"SetSecrets/internal/envfile"
 	"SetSecrets/internal/generator"
 	"SetSecrets/internal/prompt"
+	"SetSecrets/internal/session"
 	"SetSecrets/internal/tpm"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -32,8 +34,8 @@ func main() {
 			}
 
 			for i := range entries {
-				// Mode normal : remplit seulement si CHANGE_ME ou vide
-				// Mode force (-f / --force) : remplace absolument toutes les clés
+				// Mode normal : fill only if  CHANGE_ME or empty
+				// Mode force (-f / --force) : replace absolutely all keys
 				if entries[i].IsKey && (entries[i].NeedsValue() || force) {
 					pwd, err := generator.GenerateRandomPassword(24)
 					if err != nil {
@@ -181,6 +183,11 @@ func main() {
 				os.Exit(1)
 			}
 
+			if err := machine.SaveKeyToFile("device.Key"); err != nil {
+				fmt.Printf("Error saving TPM key: %v\n", err)
+				os.Exit(1)
+			}
+
 			pubKeyPem, err := machine.PublicKeyPem()
 			if err != nil {
 				fmt.Printf("Error getting public key PEM: %v\n", err)
@@ -204,20 +211,162 @@ func main() {
 				os.Exit(1)
 			}
 
+			if err := machine.SaveKeyToFile("device.key"); err != nil {
+				fmt.Printf("Error saving private key: %v\n", err)
+				os.Exit(1)
+			}
+
 			// Render elegant TUI Card with Lipgloss
 			prompt.PrintEnrollSuccess(resp.DeviceId, resp.CertSerialNumber, enrollOutFile, enrollSerial)
 		},
 	}
 
+	var startDeviceId string
+	var startMode string
+	var startApiUrl string
+	var startEnv string
+	var startKeyFile string
+	var startCertFile string
+	var startCaFile string
+
+	resolveConfig := func(envName, customUrl, customCa, customDevice string) (string, string, string) {
+		apiUrl := "https://localhost:7010"
+		caFile := ""
+
+		switch strings.ToLower(envName) {
+		case "staging":
+			apiUrl = "https://localhost:7010"
+			caFile = "root_ca.crt"
+		case "prod", "production":
+			apiUrl = "https://api.worldpinball.com"
+			caFile = ""
+		default: // dev
+			apiUrl = "https://localhost:7010"
+			caFile = ""
+		}
+
+		if customUrl != "" {
+			apiUrl = customUrl
+		}
+		if customCa != "" {
+			caFile = customCa
+		}
+
+		deviceId := customDevice
+		if deviceId == "" {
+			if cfg, err := enroll.LoadConfigFile("enroll.json"); err == nil && cfg.MachineId != "" {
+				deviceId = cfg.MachineId
+				fmt.Printf("ℹ Auto-detected Device ID from enroll.json: %s\n", deviceId)
+			}
+		}
+
+		return apiUrl, caFile, deviceId
+	}
+
+	startCmd := &cobra.Command{
+		Use:   "start",
+		Short: "Start an authenticated game session",
+		Run: func(cmd *cobra.Command, args []string) {
+			apiUrl, caFile, deviceId := resolveConfig(startEnv, startApiUrl, startCaFile, startDeviceId)
+			if deviceId == "" {
+				fmt.Println("Error: --device-id is required (or provide enroll.json)")
+				os.Exit(1)
+			}
+
+			machine := tpm.NewSimulatedMachine()
+			defer func() {
+				_ = machine.Close()
+			}()
+			if err := machine.LoadKeyFromFile(startKeyFile); err != nil {
+				fmt.Printf("Error loading private key from %s: %v\n", startKeyFile, err)
+				os.Exit(1)
+			}
+			fmt.Printf("⏳ [%s] Signing canonical request and contacting server (%s)...\n", strings.ToUpper(startEnv), apiUrl)
+			resp, err := session.StartSession(apiUrl, deviceId, machine, startMode, startCertFile, startKeyFile, caFile)
+			if err != nil {
+				fmt.Printf("Failed to start session: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("✔ Session started successfully!\n")
+			fmt.Printf("  Session ID  : %s\n", resp.SessionID)
+			fmt.Printf("  Server Time : %d\n", resp.ServerTime)
+		},
+	}
+
+	var submitDeviceId string
+	var submitSessionId string
+	var submitScore int64
+	var submitSlot int
+	var submitApiUrl string
+	var submitEnv string
+	var submitKeyFile string
+	var submitCertFile string
+	var submitCaFile string
+
+	submitCmd := &cobra.Command{
+		Use:   "submit",
+		Short: "Submit player score and end the game session",
+		Run: func(cmd *cobra.Command, args []string) {
+			apiUrl, caFile, deviceId := resolveConfig(submitEnv, submitApiUrl, submitCaFile, submitDeviceId)
+			if deviceId == "" || submitSessionId == "" {
+				fmt.Println("Error: --session-id is required (and --device-id or enroll.json)")
+				os.Exit(1)
+			}
+
+			machine := tpm.NewSimulatedMachine()
+			defer func() {
+				_ = machine.Close()
+			}()
+			if err := machine.LoadKeyFromFile(submitKeyFile); err != nil {
+				fmt.Printf("Error loading private key from %s: %v\n", submitKeyFile, err)
+				os.Exit(1)
+			}
+			fmt.Printf("⏳ [%s] Signing score submission and contacting server (%s)...\n", strings.ToUpper(submitEnv), apiUrl)
+			resp, err := session.SubmitScore(apiUrl, deviceId, machine, submitSessionId, submitScore, submitSlot, submitCertFile, submitKeyFile, caFile)
+			if err != nil {
+				fmt.Printf("Failed to submit score: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("✔ Score submitted successfully!\n")
+			fmt.Printf("  Score Entry ID : %s\n", resp.ScoreEntryID)
+		},
+	}
+
+	// enroll a device
 	enrollCmd.Flags().StringVar(&enrollMachineId, "machine-id", "", "Machine GUID provisioned by Admin")
 	enrollCmd.Flags().StringVar(&enrollToken, "token", "", "One-time enrollment token")
 	enrollCmd.Flags().StringVar(&enrollSerial, "serial", "", "Physical device serial number")
 	enrollCmd.Flags().StringVar(&enrollApiUrl, "url", "http://localhost:5000", "Base URL of the ASP.NET Core API")
 	enrollCmd.Flags().StringVarP(&enrollOutFile, "out", "o", "device.crt", "Output path for the X.509 certificate")
-	rootCmd.AddCommand(enrollCmd)
 
+	//start game session
+	startCmd.Flags().StringVar(&startEnv, "env", "dev", "Target environment profile: dev, staging, prod")
+	startCmd.Flags().StringVar(&startApiUrl, "url", "", "Override API base URL")
+	startCmd.Flags().StringVar(&startDeviceId, "device-id", "", "Device GUID registered on the server (falls back to enroll.json)")
+	startCmd.Flags().StringVar(&startMode, "mode", "mode-1", "Game mode code")
+	startCmd.Flags().StringVar(&startKeyFile, "key", "device.key", "Path to the private key PEM file")
+	startCmd.Flags().StringVar(&startCertFile, "cert", "device.crt", "Path to the X.509 certificate file")
+	startCmd.Flags().StringVar(&startCaFile, "ca", "", "Path to the root CA certificate file (override)")
+
+	// submit score
+	submitCmd.Flags().StringVar(&submitEnv, "env", "dev", "Target environment profile: dev, staging, prod")
+	submitCmd.Flags().StringVar(&submitApiUrl, "url", "", "Override API base URL")
+	submitCmd.Flags().StringVar(&submitDeviceId, "device-id", "", "Device GUID registered on the server (falls back to enroll.json)")
+	submitCmd.Flags().StringVar(&submitSessionId, "session-id", "", "Game Session GUID")
+	submitCmd.Flags().Int64Var(&submitScore, "score", 1250000, "Final score to submit")
+	submitCmd.Flags().IntVar(&submitSlot, "slot", 1, "Player slot number (1-4)")
+	submitCmd.Flags().StringVar(&submitKeyFile, "key", "device.key", "Path to the private key PEM file")
+	submitCmd.Flags().StringVar(&submitCertFile, "cert", "device.crt", "Path to the X.509 certificate file")
+	submitCmd.Flags().StringVar(&submitCaFile, "ca", "", "Path to the root CA certificate file (override)")
+
+	// miscelinous
 	dotnetCmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Simulate without executing dotnet commands")
 	dotnetCmd.Flags().StringVarP(&projectPath, "project", "p", "", "Path to the .csproj or project directory")
+
+	//add command
+	rootCmd.AddCommand(enrollCmd)
+	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(submitCmd)
 	rootCmd.AddCommand(dotnetCmd)
 
 	if err := rootCmd.Execute(); err != nil {
