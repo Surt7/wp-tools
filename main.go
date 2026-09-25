@@ -10,6 +10,7 @@ import (
 	"SetSecrets/internal/tpm"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -216,6 +217,11 @@ func main() {
 				os.Exit(1)
 			}
 
+			if cfg, err := enroll.LoadConfigFile("enroll.json"); err == nil {
+				cfg.DeviceId = resp.DeviceId
+				_ = enroll.SaveConfigFile("enroll.json", cfg)
+			}
+
 			// Render elegant TUI Card with Lipgloss
 			prompt.PrintEnrollSuccess(resp.DeviceId, resp.CertSerialNumber, enrollOutFile, enrollSerial)
 		},
@@ -254,8 +260,8 @@ func main() {
 
 		deviceId := customDevice
 		if deviceId == "" {
-			if cfg, err := enroll.LoadConfigFile("enroll.json"); err == nil && cfg.MachineId != "" {
-				deviceId = cfg.MachineId
+			if cfg, err := enroll.LoadConfigFile("enroll.json"); err == nil && cfg.DeviceId != "" {
+				deviceId = cfg.DeviceId
 				fmt.Printf("ℹ Auto-detected Device ID from enroll.json: %s\n", deviceId)
 			}
 		}
@@ -297,11 +303,54 @@ func main() {
 	var submitSessionId string
 	var submitScore int64
 	var submitSlot int
+	var submitScores string
 	var submitApiUrl string
 	var submitEnv string
 	var submitKeyFile string
 	var submitCertFile string
 	var submitCaFile string
+
+	parseScores := func(scoresStr string, singleScore int64, singleSlot int) ([]session.SlotScoreRequest, error) {
+		if strings.TrimSpace(scoresStr) == "" {
+			return []session.SlotScoreRequest{
+				{
+					SlotNumber: singleSlot,
+					Score:      singleScore,
+				},
+			}, nil
+		}
+
+		parts := strings.Split(scoresStr, ",")
+		var result []session.SlotScoreRequest
+		for i, part := range parts {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			if strings.Contains(part, ":") {
+				kv := strings.SplitN(part, ":", 2)
+				slot, err := strconv.Atoi(strings.TrimSpace(kv[0]))
+				if err != nil {
+					return nil, fmt.Errorf("invalid slot in '%s': %w", part, err)
+				}
+				score, err := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("invalid score in '%s': %w", part, err)
+				}
+				result = append(result, session.SlotScoreRequest{SlotNumber: slot, Score: score})
+			} else {
+				score, err := strconv.ParseInt(part, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("invalid score '%s': %w", part, err)
+				}
+				result = append(result, session.SlotScoreRequest{SlotNumber: i + 1, Score: score})
+			}
+		}
+		if len(result) == 0 {
+			return nil, fmt.Errorf("no valid scores found in --scores '%s'", scoresStr)
+		}
+		return result, nil
+	}
 
 	submitCmd := &cobra.Command{
 		Use:   "submit",
@@ -310,6 +359,12 @@ func main() {
 			apiUrl, caFile, deviceId := resolveConfig(submitEnv, submitApiUrl, submitCaFile, submitDeviceId)
 			if deviceId == "" || submitSessionId == "" {
 				fmt.Println("Error: --session-id is required (and --device-id or enroll.json)")
+				os.Exit(1)
+			}
+
+			scores, err := parseScores(submitScores, submitScore, submitSlot)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
 			}
 
@@ -322,12 +377,6 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Printf("⏳ [%s] Signing score submission and contacting server (%s)...\n", strings.ToUpper(submitEnv), apiUrl)
-			scores := []session.SlotScoreRequest{
-				{
-					SlotNumber: submitSlot,
-					Score:      submitScore,
-				},
-			}
 			resp, err := session.SubmitScore(apiUrl, deviceId, machine, submitSessionId, scores, submitCertFile, submitKeyFile, caFile)
 			if err != nil {
 				fmt.Printf("Failed to submit score: %v\n", err)
@@ -361,8 +410,9 @@ func main() {
 	submitCmd.Flags().StringVar(&submitApiUrl, "url", "", "Override API base URL")
 	submitCmd.Flags().StringVar(&submitDeviceId, "device-id", "", "Device GUID registered on the server (falls back to enroll.json)")
 	submitCmd.Flags().StringVar(&submitSessionId, "session-id", "", "Game Session GUID")
-	submitCmd.Flags().Int64Var(&submitScore, "score", 1250000, "Final score to submit")
-	submitCmd.Flags().IntVar(&submitSlot, "slot", 1, "Player slot number (1-4)")
+	submitCmd.Flags().Int64Var(&submitScore, "score", 1250000, "Single player final score to submit (default when --scores is not set)")
+	submitCmd.Flags().IntVar(&submitSlot, "slot", 1, "Single player slot number 1-4 (default when --scores is not set)")
+	submitCmd.Flags().StringVar(&submitScores, "scores", "", "Comma-separated list of scores or slot:score (e.g. '1:2500000,2:1800000' or '2500000,1800000')")
 	submitCmd.Flags().StringVar(&submitKeyFile, "key", "device.key", "Path to the private key PEM file")
 	submitCmd.Flags().StringVar(&submitCertFile, "cert", "device.crt", "Path to the X.509 certificate file")
 	submitCmd.Flags().StringVar(&submitCaFile, "ca", "", "Path to the root CA certificate file (override)")

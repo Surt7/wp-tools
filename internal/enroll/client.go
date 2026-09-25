@@ -11,6 +11,7 @@ import (
 )
 
 type ConfigFile struct {
+	DeviceId           string `json:"deviceId,omitempty"`
 	MachineId          string `json:"machineId"`
 	Token              string `json:"token"`
 	DeviceSerialNumber string `json:"deviceSerialNumber,omitempty"`
@@ -70,4 +71,12 @@ func LoadConfigFile(path string) (*ConfigFile, error) {
 	}
 
 	return &cfg, nil
+}
+
+func SaveConfigFile(path string, cfg *ConfigFile) error {
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
 }
