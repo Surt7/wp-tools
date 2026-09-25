@@ -183,7 +183,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			if err := machine.SaveKeyToFile("device.Key"); err != nil {
+			if err := machine.SaveKeyToFile("device.key"); err != nil {
 				fmt.Printf("Error saving TPM key: %v\n", err)
 				os.Exit(1)
 			}
@@ -322,13 +322,21 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Printf("⏳ [%s] Signing score submission and contacting server (%s)...\n", strings.ToUpper(submitEnv), apiUrl)
-			resp, err := session.SubmitScore(apiUrl, deviceId, machine, submitSessionId, submitScore, submitSlot, submitCertFile, submitKeyFile, caFile)
+			scores := []session.SlotScoreRequest{
+				{
+					SlotNumber: submitSlot,
+					Score:      submitScore,
+				},
+			}
+			resp, err := session.SubmitScore(apiUrl, deviceId, machine, submitSessionId, scores, submitCertFile, submitKeyFile, caFile)
 			if err != nil {
 				fmt.Printf("Failed to submit score: %v\n", err)
 				os.Exit(1)
 			}
 			fmt.Printf("✔ Score submitted successfully!\n")
-			fmt.Printf("  Score Entry ID : %s\n", resp.ScoreEntryID)
+			for _, id := range resp.ScoreEntryIDs {
+				fmt.Printf("  Score Entry ID : %s\n", id)
+			}
 		},
 	}
 

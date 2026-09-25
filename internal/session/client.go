@@ -25,14 +25,18 @@ type StartResponse struct {
 	ServerTime int64  `json:"serverTime"`
 }
 
+type SlotScoreRequest struct {
+	SlotNumber int   `json:"slotNumber"`
+	Score      int64 `json:"score"`
+}
+
 type SubmitScoreRequest struct {
-	DeviceID   string `json:"deviceId"`
-	Score      int64  `json:"score"`
-	SlotNumber int    `json:"slotNumber"`
+	DeviceID string             `json:"deviceId"`
+	Scores   []SlotScoreRequest `json:"scores"`
 }
 
 type SubmitScoreResponse struct {
-	ScoreEntryID string `json:"scoreEntryId"`
+	ScoreEntryIDs []string `json:"scoreEntryIds"`
 }
 
 func BuildCanonical(ts int64, nonce, method, path string, bodyBytes []byte) []byte {
@@ -161,16 +165,15 @@ func StartSession(apiUrl, deviceID string, signer Signer, modeCode, certPath, ke
 	return executeSignedRequest[StartResponse](client, apiUrl, http.MethodPost, "/api/v1/sessions/start", deviceID, signer, reqBody)
 }
 
-func SubmitScore(apiUrl, deviceID string, signer Signer, sessionID string, score int64, slotNumber int, certPath, keyPath, caPath string) (*SubmitScoreResponse, error) {
+func SubmitScore(apiUrl, deviceID string, signer Signer, sessionID string, scores []SlotScoreRequest, certPath, keyPath, caPath string) (*SubmitScoreResponse, error) {
 	client, err := createSecureHttpClient(certPath, keyPath, caPath)
 	if err != nil {
 		return nil, err
 	}
 
 	reqBody := SubmitScoreRequest{
-		DeviceID:   deviceID,
-		Score:      score,
-		SlotNumber: slotNumber,
+		DeviceID: deviceID,
+		Scores:   scores,
 	}
 
 	path := fmt.Sprintf("/api/v1/sessions/%s/submit-score", sessionID)
