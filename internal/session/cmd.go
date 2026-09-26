@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"SetSecrets/internal/enroll"
+	"SetSecrets/internal/prompt"
 	gamesession "SetSecrets/internal/proto/gamesession"
 	"SetSecrets/internal/tpm"
 
@@ -366,6 +367,74 @@ func NewLobbyCmd() *cobra.Command {
 		},
 	}
 
+	// Subcommand: add (flags or interactive TUI)
+	var (
+		addSlot     int32
+		addInitials string
+		addFile     string
+	)
+
+	addCmd := &cobra.Command{
+		Use:   "add",
+		Short: "Add player(s) to the lobby (interactive TUI or flags)",
+		Run: func(c *cobra.Command, args []string) {
+			sid := resolveSessionID(sessionID)
+			if sid == "" {
+				fmt.Println("Error: --session-id is required (or run 'wp-tools create' first)")
+				os.Exit(1)
+			}
+
+			// 1. Direct flags (--slot and --initials)
+			if addSlot >= 1 && addSlot <= 4 && addInitials != "" {
+				resp, err := AddPlayer(c.Context(), url, true, sid, addSlot, addInitials)
+				if err != nil {
+					fmt.Printf("Failed to add player: %v\n", err)
+					os.Exit(1)
+				}
+				fmt.Printf("✔ Player '%s' added to slot %d successfully (%s)\n", addInitials, resp.SlotNumber, resp.Message)
+				return
+			}
+
+			// 2. Interactive TUI via players.json
+			filePath := "players.json"
+			if addFile != "" {
+				filePath = addFile
+			}
+
+			var candidates []prompt.PlayerCandidate
+			if data, err := os.ReadFile(filePath); err == nil {
+				_ = json.Unmarshal(data, &candidates)
+			}
+
+			if len(candidates) > 0 {
+				selected, err := prompt.SelectPlayersMulti(candidates)
+				if err != nil {
+					fmt.Printf("Prompt error: %v\n", err)
+					os.Exit(1)
+				}
+				if len(selected) == 0 {
+					fmt.Println("ℹ No players selected.")
+					return
+				}
+				for _, p := range selected {
+					resp, err := AddPlayer(c.Context(), url, true, sid, p.Slot, p.Initials)
+					if err != nil {
+						fmt.Printf("❌ Failed to add slot %d (%s): %v\n", p.Slot, p.Initials, err)
+					} else {
+						fmt.Printf("✔ Player '%s' added to slot %d successfully!\n", p.Initials, resp.SlotNumber)
+					}
+				}
+				return
+			}
+
+			fmt.Println("Please provide --slot and --initials (e.g. wp-tools lobby add --slot 2 --initials ALX) or create players.json")
+		},
+	}
+	addCmd.Flags().Int32Var(&addSlot, "slot", 0, "Slot number (1-4)")
+	addCmd.Flags().StringVar(&addInitials, "initials", "", "Guest initials (e.g. ALX)")
+	addCmd.Flags().StringVar(&addFile, "file", "", "Path to players.json (optional)")
+
+	cmd.AddCommand(addCmd)
 	cmd.AddCommand(getCmd)
 	cmd.AddCommand(kickCmd)
 	cmd.AddCommand(watchCmd)

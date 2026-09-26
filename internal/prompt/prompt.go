@@ -35,6 +35,47 @@ func SelectKeys(keys []string) ([]string, error) {
 	return selected, nil
 }
 
+type PlayerCandidate struct {
+	Slot     int32  `json:"slot"`
+	Initials string `json:"initials"`
+	Score    int64  `json:"score,omitempty"`
+}
+
+func SelectPlayersMulti(candidates []PlayerCandidate) ([]PlayerCandidate, error) {
+	var selectedLabels []string
+	var options []huh.Option[string]
+
+	for _, c := range candidates {
+		label := fmt.Sprintf("Slot %d: %s", c.Slot, c.Initials)
+		options = append(options, huh.NewOption(label, label).Selected(true))
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("Select players to join the lobby").
+				Description("Space to toggle, Enter to confirm").
+				Options(options...).
+				Value(&selectedLabels),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		return nil, err
+	}
+
+	var result []PlayerCandidate
+	for _, label := range selectedLabels {
+		for _, c := range candidates {
+			if fmt.Sprintf("Slot %d: %s", c.Slot, c.Initials) == label {
+				result = append(result, c)
+				break
+			}
+		}
+	}
+	return result, nil
+}
+
 // EnrollForm prompts the user interactively with QR code / barcode scan or manual inputs.
 func EnrollForm(machineId, token, serial *string) error {
 	var rawScan string

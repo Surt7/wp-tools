@@ -117,3 +117,23 @@ func WatchLobby(ctx context.Context, target string, useTls bool, sessionID strin
 
 	}
 }
+
+func AddPlayer(ctx context.Context, target string, useTls bool, sessionID string, slotNumber int32, guestInitials string) (*pb.AddPlayerResponse, error) {
+	client, cleanup, err := CreateGrpcClient(target, useTls)
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	req := &pb.AddPlayerRequest{
+		SessionId:  sessionID,
+		SlotNumber: slotNumber,
+	}
+	if guestInitials != "" {
+		req.GuestInitials = &guestInitials
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	return client.AddPlayer(ctx, req)
+}
