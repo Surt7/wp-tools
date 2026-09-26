@@ -1,6 +1,7 @@
 package session
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -12,6 +13,11 @@ import (
 
 	"github.com/spf13/cobra"
 )
+
+// SessionFile represents the saved session state.
+type SessionFile struct {
+	SessionID string `json:"sessionId"`
+}
 
 // resolveConfig resolves API URL, CA file, and device ID based on environment and flags.
 func resolveConfig(envName, customUrl, customCa, customDevice string) (string, string, string) {
@@ -46,6 +52,31 @@ func resolveConfig(envName, customUrl, customCa, customDevice string) (string, s
 	}
 
 	return apiUrl, caFile, deviceId
+}
+
+// resolveSessionID returns the explicit sessionID if provided, otherwise reads it from session.json.
+func resolveSessionID(customSessionID string) string {
+	if customSessionID != "" {
+		return customSessionID
+	}
+	data, err := os.ReadFile("session.json")
+	if err == nil {
+		var s SessionFile
+		if err := json.Unmarshal(data, &s); err == nil && s.SessionID != "" {
+			fmt.Printf("ℹ Auto-detected Session ID from session.json: %s\n", s.SessionID)
+			return s.SessionID
+		}
+	}
+	return ""
+}
+
+// saveSessionID writes the active session ID to session.json.
+func saveSessionID(sessionID string) error {
+	data, err := json.MarshalIndent(SessionFile{SessionID: sessionID}, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile("session.json", data, 0644)
 }
 
 // parseScores parses score strings like '1:2500000,2:1800000' or single score/slot flags.
@@ -128,6 +159,7 @@ func NewStartCmd() *cobra.Command {
 				fmt.Printf("Failed to create session: %v\n", err)
 				os.Exit(1)
 			}
+			_ = saveSessionID(resp.SessionID)
 			fmt.Printf("✔ Game session created successfully! Lobby is open.\n")
 			fmt.Printf("  Session ID  : %s\n", resp.SessionID)
 			fmt.Printf("  Server Time : %d\n", resp.ServerTime)
@@ -165,6 +197,7 @@ func NewSubmitCmd() *cobra.Command {
 		Short: "Submit player score and end the game session",
 		Run: func(cmd *cobra.Command, args []string) {
 			apiUrl, caFile, deviceId := resolveConfig(submitEnv, submitApiUrl, submitCaFile, submitDeviceId)
+			submitSessionId = resolveSessionID(submitSessionId)
 			if deviceId == "" || submitSessionId == "" {
 				fmt.Println("Error: --session-id is required (and --device-id or enroll.json)")
 				os.Exit(1)
@@ -256,11 +289,12 @@ func NewLobbyCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Get current lobby status and slots",
 		Run: func(c *cobra.Command, args []string) {
-			if sessionID == "" {
-				fmt.Println("Error: --session-id is required")
+			sid := resolveSessionID(sessionID)
+			if sid == "" {
+				fmt.Println("Error: --session-id is required (or run 'wp-tools create' first)")
 				os.Exit(1)
 			}
-			resp, err := GetLobby(c.Context(), url, true, sessionID)
+			resp, err := GetLobby(c.Context(), url, true, sid)
 			if err != nil {
 				fmt.Printf("Failed to get lobby: %v\n", err)
 				os.Exit(1)
@@ -274,11 +308,12 @@ func NewLobbyCmd() *cobra.Command {
 		Use:   "kick",
 		Short: "Kick a player from a slot",
 		Run: func(c *cobra.Command, args []string) {
-			if sessionID == "" || slot < 1 || slot > 4 {
+			sid := resolveSessionID(sessionID)
+			if sid == "" || slot < 1 || slot > 4 {
 				fmt.Println("Error: --session-id and a valid --slot (1-4) are required")
 				os.Exit(1)
 			}
-			resp, err := KickPlayer(c.Context(), url, true, sessionID, slot, reason)
+			resp, err := KickPlayer(c.Context(), url, true, sid, slot, reason)
 			if err != nil {
 				fmt.Printf("Failed to kick player: %v\n", err)
 				os.Exit(1)
@@ -294,12 +329,13 @@ func NewLobbyCmd() *cobra.Command {
 		Use:   "watch",
 		Short: "Watch lobby updates in real-time",
 		Run: func(c *cobra.Command, args []string) {
-			if sessionID == "" {
-				fmt.Println("Error: --session-id is required")
+			sid := resolveSessionID(sessionID)
+			if sid == "" {
+				fmt.Println("Error: --session-id is required (or run 'wp-tools create' first)")
 				os.Exit(1)
 			}
-			fmt.Printf("👀 Watching lobby for session %s (Ctrl+C to quit)...\n", sessionID)
-			err := WatchLobby(c.Context(), url, true, sessionID, func(resp *gamesession.SessionLobbyResponse) {
+			fmt.Printf("👀 Watching lobby for session %s (Ctrl+C to quit)...\n", sid)
+			err := WatchLobby(c.Context(), url, true, sid, func(resp *gamesession.SessionLobbyResponse) {
 				PrintLobby(resp)
 			})
 			if err != nil {
@@ -316,11 +352,12 @@ func NewLobbyCmd() *cobra.Command {
 		Aliases: []string{"start"},
 		Short:   "Launch / start the game session, moving it from lobby to running",
 		Run: func(c *cobra.Command, args []string) {
-			if sessionID == "" {
-				fmt.Println("Error: --session-id is required")
+			sid := resolveSessionID(sessionID)
+			if sid == "" {
+				fmt.Println("Error: --session-id is required (or run 'wp-tools create' first)")
 				os.Exit(1)
 			}
-			resp, err := LaunchSession(c.Context(), url, true, sessionID)
+			resp, err := LaunchSession(c.Context(), url, true, sid)
 			if err != nil {
 				fmt.Printf("Failed to launch session: %v\n", err)
 				os.Exit(1)

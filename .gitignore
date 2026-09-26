@@ -26,3 +26,4 @@ bin/
 *.Key
 *.crt
 enroll.json
+session.json
