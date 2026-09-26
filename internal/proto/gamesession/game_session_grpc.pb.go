@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GameSessionService_AddPlayer_FullMethodName  = "/worldpinball.gamesessions.v1.GameSessionService/AddPlayer"
-	GameSessionService_KickPlayer_FullMethodName = "/worldpinball.gamesessions.v1.GameSessionService/KickPlayer"
-	GameSessionService_WatchLobby_FullMethodName = "/worldpinball.gamesessions.v1.GameSessionService/WatchLobby"
-	GameSessionService_GetLobby_FullMethodName   = "/worldpinball.gamesessions.v1.GameSessionService/GetLobby"
+	GameSessionService_AddPlayer_FullMethodName     = "/worldpinball.gamesessions.v1.GameSessionService/AddPlayer"
+	GameSessionService_KickPlayer_FullMethodName    = "/worldpinball.gamesessions.v1.GameSessionService/KickPlayer"
+	GameSessionService_LaunchSession_FullMethodName = "/worldpinball.gamesessions.v1.GameSessionService/LaunchSession"
+	GameSessionService_WatchLobby_FullMethodName    = "/worldpinball.gamesessions.v1.GameSessionService/WatchLobby"
+	GameSessionService_GetLobby_FullMethodName      = "/worldpinball.gamesessions.v1.GameSessionService/GetLobby"
 )
 
 // GameSessionServiceClient is the client API for GameSessionService service.
@@ -31,6 +32,7 @@ const (
 type GameSessionServiceClient interface {
 	AddPlayer(ctx context.Context, in *AddPlayerRequest, opts ...grpc.CallOption) (*AddPlayerResponse, error)
 	KickPlayer(ctx context.Context, in *KickPlayerRequest, opts ...grpc.CallOption) (*KickPlayerResponse, error)
+	LaunchSession(ctx context.Context, in *LaunchSessionRequest, opts ...grpc.CallOption) (*LaunchSessionResponse, error)
 	WatchLobby(ctx context.Context, in *WatchLobbyRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SessionLobbyResponse], error)
 	GetLobby(ctx context.Context, in *GetLobbyRequest, opts ...grpc.CallOption) (*SessionLobbyResponse, error)
 }
@@ -57,6 +59,16 @@ func (c *gameSessionServiceClient) KickPlayer(ctx context.Context, in *KickPlaye
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(KickPlayerResponse)
 	err := c.cc.Invoke(ctx, GameSessionService_KickPlayer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gameSessionServiceClient) LaunchSession(ctx context.Context, in *LaunchSessionRequest, opts ...grpc.CallOption) (*LaunchSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LaunchSessionResponse)
+	err := c.cc.Invoke(ctx, GameSessionService_LaunchSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +110,7 @@ func (c *gameSessionServiceClient) GetLobby(ctx context.Context, in *GetLobbyReq
 type GameSessionServiceServer interface {
 	AddPlayer(context.Context, *AddPlayerRequest) (*AddPlayerResponse, error)
 	KickPlayer(context.Context, *KickPlayerRequest) (*KickPlayerResponse, error)
+	LaunchSession(context.Context, *LaunchSessionRequest) (*LaunchSessionResponse, error)
 	WatchLobby(*WatchLobbyRequest, grpc.ServerStreamingServer[SessionLobbyResponse]) error
 	GetLobby(context.Context, *GetLobbyRequest) (*SessionLobbyResponse, error)
 	mustEmbedUnimplementedGameSessionServiceServer()
@@ -115,6 +128,9 @@ func (UnimplementedGameSessionServiceServer) AddPlayer(context.Context, *AddPlay
 }
 func (UnimplementedGameSessionServiceServer) KickPlayer(context.Context, *KickPlayerRequest) (*KickPlayerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method KickPlayer not implemented")
+}
+func (UnimplementedGameSessionServiceServer) LaunchSession(context.Context, *LaunchSessionRequest) (*LaunchSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LaunchSession not implemented")
 }
 func (UnimplementedGameSessionServiceServer) WatchLobby(*WatchLobbyRequest, grpc.ServerStreamingServer[SessionLobbyResponse]) error {
 	return status.Error(codes.Unimplemented, "method WatchLobby not implemented")
@@ -179,6 +195,24 @@ func _GameSessionService_KickPlayer_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GameSessionService_LaunchSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LaunchSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameSessionServiceServer).LaunchSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GameSessionService_LaunchSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameSessionServiceServer).LaunchSession(ctx, req.(*LaunchSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GameSessionService_WatchLobby_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(WatchLobbyRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -222,6 +256,10 @@ var GameSessionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "KickPlayer",
 			Handler:    _GameSessionService_KickPlayer_Handler,
+		},
+		{
+			MethodName: "LaunchSession",
+			Handler:    _GameSessionService_LaunchSession_Handler,
 		},
 		{
 			MethodName: "GetLobby",

@@ -73,6 +73,24 @@ func KickPlayer(ctx context.Context, target string, useTls bool, sessionID strin
 	return client.KickPlayer(ctx, req)
 }
 
+// LaunchSession transitions the session from Created to Started.
+func LaunchSession(ctx context.Context, target string, useTls bool, sessionID string) (*pb.LaunchSessionResponse, error) {
+	client, cleanup, err := CreateGrpcClient(target, useTls)
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	req := &pb.LaunchSessionRequest{
+		SessionId: sessionID,
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return client.LaunchSession(ctx, req)
+}
+
 func WatchLobby(ctx context.Context, target string, useTls bool, sessionID string, onUpdate func(*pb.SessionLobbyResponse)) error {
 	client, cleanup, err := CreateGrpcClient(target, useTls)
 	if err != nil {

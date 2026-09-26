@@ -488,6 +488,110 @@ func (x *SessionLobbyResponse) GetSlots() []*PlayerSlotInfo {
 	return nil
 }
 
+type LaunchSessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SessionId     string                 `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LaunchSessionRequest) Reset() {
+	*x = LaunchSessionRequest{}
+	mi := &file_game_session_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LaunchSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LaunchSessionRequest) ProtoMessage() {}
+
+func (x *LaunchSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_session_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LaunchSessionRequest.ProtoReflect.Descriptor instead.
+func (*LaunchSessionRequest) Descriptor() ([]byte, []int) {
+	return file_game_session_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *LaunchSessionRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+type LaunchSessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LaunchSessionResponse) Reset() {
+	*x = LaunchSessionResponse{}
+	mi := &file_game_session_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LaunchSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LaunchSessionResponse) ProtoMessage() {}
+
+func (x *LaunchSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_session_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LaunchSessionResponse.ProtoReflect.Descriptor instead.
+func (*LaunchSessionResponse) Descriptor() ([]byte, []int) {
+	return file_game_session_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *LaunchSessionResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *LaunchSessionResponse) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *LaunchSessionResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_game_session_proto protoreflect.FileDescriptor
 
 const file_game_session_proto_rawDesc = "" +
@@ -540,11 +644,20 @@ const file_game_session_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12#\n" +
 	"\rsession_state\x18\x02 \x01(\tR\fsessionState\x12B\n" +
-	"\x05slots\x18\x03 \x03(\v2,.worldpinball.gamesessions.v1.PlayerSlotInfoR\x05slots2\xd7\x03\n" +
+	"\x05slots\x18\x03 \x03(\v2,.worldpinball.gamesessions.v1.PlayerSlotInfoR\x05slots\"5\n" +
+	"\x14LaunchSessionRequest\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\"j\n" +
+	"\x15LaunchSessionResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage2\xd1\x04\n" +
 	"\x12GameSessionService\x12l\n" +
 	"\tAddPlayer\x12..worldpinball.gamesessions.v1.AddPlayerRequest\x1a/.worldpinball.gamesessions.v1.AddPlayerResponse\x12o\n" +
 	"\n" +
-	"KickPlayer\x12/.worldpinball.gamesessions.v1.KickPlayerRequest\x1a0.worldpinball.gamesessions.v1.KickPlayerResponse\x12s\n" +
+	"KickPlayer\x12/.worldpinball.gamesessions.v1.KickPlayerRequest\x1a0.worldpinball.gamesessions.v1.KickPlayerResponse\x12x\n" +
+	"\rLaunchSession\x122.worldpinball.gamesessions.v1.LaunchSessionRequest\x1a3.worldpinball.gamesessions.v1.LaunchSessionResponse\x12s\n" +
 	"\n" +
 	"WatchLobby\x12/.worldpinball.gamesessions.v1.WatchLobbyRequest\x1a2.worldpinball.gamesessions.v1.SessionLobbyResponse0\x01\x12m\n" +
 	"\bGetLobby\x12-.worldpinball.gamesessions.v1.GetLobbyRequest\x1a2.worldpinball.gamesessions.v1.SessionLobbyResponseBQZ%SetSecrets/internal/proto/gamesession\xaa\x02'WorldPinball.Api.Protos.V1.GameSessionsb\x06proto3"
@@ -561,29 +674,33 @@ func file_game_session_proto_rawDescGZIP() []byte {
 	return file_game_session_proto_rawDescData
 }
 
-var file_game_session_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_game_session_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_game_session_proto_goTypes = []any{
-	(*AddPlayerRequest)(nil),     // 0: worldpinball.gamesessions.v1.AddPlayerRequest
-	(*AddPlayerResponse)(nil),    // 1: worldpinball.gamesessions.v1.AddPlayerResponse
-	(*KickPlayerRequest)(nil),    // 2: worldpinball.gamesessions.v1.KickPlayerRequest
-	(*KickPlayerResponse)(nil),   // 3: worldpinball.gamesessions.v1.KickPlayerResponse
-	(*PlayerSlotInfo)(nil),       // 4: worldpinball.gamesessions.v1.PlayerSlotInfo
-	(*GetLobbyRequest)(nil),      // 5: worldpinball.gamesessions.v1.GetLobbyRequest
-	(*WatchLobbyRequest)(nil),    // 6: worldpinball.gamesessions.v1.WatchLobbyRequest
-	(*SessionLobbyResponse)(nil), // 7: worldpinball.gamesessions.v1.SessionLobbyResponse
+	(*AddPlayerRequest)(nil),      // 0: worldpinball.gamesessions.v1.AddPlayerRequest
+	(*AddPlayerResponse)(nil),     // 1: worldpinball.gamesessions.v1.AddPlayerResponse
+	(*KickPlayerRequest)(nil),     // 2: worldpinball.gamesessions.v1.KickPlayerRequest
+	(*KickPlayerResponse)(nil),    // 3: worldpinball.gamesessions.v1.KickPlayerResponse
+	(*PlayerSlotInfo)(nil),        // 4: worldpinball.gamesessions.v1.PlayerSlotInfo
+	(*GetLobbyRequest)(nil),       // 5: worldpinball.gamesessions.v1.GetLobbyRequest
+	(*WatchLobbyRequest)(nil),     // 6: worldpinball.gamesessions.v1.WatchLobbyRequest
+	(*SessionLobbyResponse)(nil),  // 7: worldpinball.gamesessions.v1.SessionLobbyResponse
+	(*LaunchSessionRequest)(nil),  // 8: worldpinball.gamesessions.v1.LaunchSessionRequest
+	(*LaunchSessionResponse)(nil), // 9: worldpinball.gamesessions.v1.LaunchSessionResponse
 }
 var file_game_session_proto_depIdxs = []int32{
 	4, // 0: worldpinball.gamesessions.v1.SessionLobbyResponse.slots:type_name -> worldpinball.gamesessions.v1.PlayerSlotInfo
 	0, // 1: worldpinball.gamesessions.v1.GameSessionService.AddPlayer:input_type -> worldpinball.gamesessions.v1.AddPlayerRequest
 	2, // 2: worldpinball.gamesessions.v1.GameSessionService.KickPlayer:input_type -> worldpinball.gamesessions.v1.KickPlayerRequest
-	6, // 3: worldpinball.gamesessions.v1.GameSessionService.WatchLobby:input_type -> worldpinball.gamesessions.v1.WatchLobbyRequest
-	5, // 4: worldpinball.gamesessions.v1.GameSessionService.GetLobby:input_type -> worldpinball.gamesessions.v1.GetLobbyRequest
-	1, // 5: worldpinball.gamesessions.v1.GameSessionService.AddPlayer:output_type -> worldpinball.gamesessions.v1.AddPlayerResponse
-	3, // 6: worldpinball.gamesessions.v1.GameSessionService.KickPlayer:output_type -> worldpinball.gamesessions.v1.KickPlayerResponse
-	7, // 7: worldpinball.gamesessions.v1.GameSessionService.WatchLobby:output_type -> worldpinball.gamesessions.v1.SessionLobbyResponse
-	7, // 8: worldpinball.gamesessions.v1.GameSessionService.GetLobby:output_type -> worldpinball.gamesessions.v1.SessionLobbyResponse
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
+	8, // 3: worldpinball.gamesessions.v1.GameSessionService.LaunchSession:input_type -> worldpinball.gamesessions.v1.LaunchSessionRequest
+	6, // 4: worldpinball.gamesessions.v1.GameSessionService.WatchLobby:input_type -> worldpinball.gamesessions.v1.WatchLobbyRequest
+	5, // 5: worldpinball.gamesessions.v1.GameSessionService.GetLobby:input_type -> worldpinball.gamesessions.v1.GetLobbyRequest
+	1, // 6: worldpinball.gamesessions.v1.GameSessionService.AddPlayer:output_type -> worldpinball.gamesessions.v1.AddPlayerResponse
+	3, // 7: worldpinball.gamesessions.v1.GameSessionService.KickPlayer:output_type -> worldpinball.gamesessions.v1.KickPlayerResponse
+	9, // 8: worldpinball.gamesessions.v1.GameSessionService.LaunchSession:output_type -> worldpinball.gamesessions.v1.LaunchSessionResponse
+	7, // 9: worldpinball.gamesessions.v1.GameSessionService.WatchLobby:output_type -> worldpinball.gamesessions.v1.SessionLobbyResponse
+	7, // 10: worldpinball.gamesessions.v1.GameSessionService.GetLobby:output_type -> worldpinball.gamesessions.v1.SessionLobbyResponse
+	6, // [6:11] is the sub-list for method output_type
+	1, // [1:6] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -603,7 +720,7 @@ func file_game_session_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_session_proto_rawDesc), len(file_game_session_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

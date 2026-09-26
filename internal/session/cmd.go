@@ -309,9 +309,28 @@ func NewLobbyCmd() *cobra.Command {
 		},
 	}
 
+	// 4. Subcommand: launch
+	launchCmd := &cobra.Command{
+		Use:   "launch",
+		Short: "Launch the game session, moving it from lobby to started",
+		Run: func(c *cobra.Command, args []string) {
+			if sessionID == "" {
+				fmt.Println("Error: --session-id is required")
+				os.Exit(1)
+			}
+			resp, err := LaunchSession(c.Context(), url, true, sessionID)
+			if err != nil {
+				fmt.Printf("Failed to launch session: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("🚀 Session %s launched successfully! The game has started.\n", resp.SessionId)
+		},
+	}
+
 	cmd.AddCommand(getCmd)
 	cmd.AddCommand(kickCmd)
 	cmd.AddCommand(watchCmd)
+	cmd.AddCommand(launchCmd)
 
 	return cmd
 }
