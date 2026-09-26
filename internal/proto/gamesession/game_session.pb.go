@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        v7.35.1
-// source: game_session.proto
+// source: proto/game_session.proto
 
 package gamesession
 
@@ -34,7 +34,7 @@ type AddPlayerRequest struct {
 
 func (x *AddPlayerRequest) Reset() {
 	*x = AddPlayerRequest{}
-	mi := &file_game_session_proto_msgTypes[0]
+	mi := &file_proto_game_session_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *AddPlayerRequest) String() string {
 func (*AddPlayerRequest) ProtoMessage() {}
 
 func (x *AddPlayerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[0]
+	mi := &file_proto_game_session_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *AddPlayerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddPlayerRequest.ProtoReflect.Descriptor instead.
 func (*AddPlayerRequest) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{0}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *AddPlayerRequest) GetSessionId() string {
@@ -101,7 +101,7 @@ type AddPlayerResponse struct {
 
 func (x *AddPlayerResponse) Reset() {
 	*x = AddPlayerResponse{}
-	mi := &file_game_session_proto_msgTypes[1]
+	mi := &file_proto_game_session_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +113,7 @@ func (x *AddPlayerResponse) String() string {
 func (*AddPlayerResponse) ProtoMessage() {}
 
 func (x *AddPlayerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[1]
+	mi := &file_proto_game_session_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +126,7 @@ func (x *AddPlayerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddPlayerResponse.ProtoReflect.Descriptor instead.
 func (*AddPlayerResponse) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{1}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AddPlayerResponse) GetSuccess() bool {
@@ -162,7 +162,7 @@ type KickPlayerRequest struct {
 
 func (x *KickPlayerRequest) Reset() {
 	*x = KickPlayerRequest{}
-	mi := &file_game_session_proto_msgTypes[2]
+	mi := &file_proto_game_session_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +174,7 @@ func (x *KickPlayerRequest) String() string {
 func (*KickPlayerRequest) ProtoMessage() {}
 
 func (x *KickPlayerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[2]
+	mi := &file_proto_game_session_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +187,7 @@ func (x *KickPlayerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KickPlayerRequest.ProtoReflect.Descriptor instead.
 func (*KickPlayerRequest) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{2}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *KickPlayerRequest) GetSessionId() string {
@@ -222,7 +222,7 @@ type KickPlayerResponse struct {
 
 func (x *KickPlayerResponse) Reset() {
 	*x = KickPlayerResponse{}
-	mi := &file_game_session_proto_msgTypes[3]
+	mi := &file_proto_game_session_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -234,7 +234,7 @@ func (x *KickPlayerResponse) String() string {
 func (*KickPlayerResponse) ProtoMessage() {}
 
 func (x *KickPlayerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[3]
+	mi := &file_proto_game_session_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -247,7 +247,7 @@ func (x *KickPlayerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KickPlayerResponse.ProtoReflect.Descriptor instead.
 func (*KickPlayerResponse) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{3}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *KickPlayerResponse) GetSuccess() bool {
@@ -284,7 +284,7 @@ type PlayerSlotInfo struct {
 
 func (x *PlayerSlotInfo) Reset() {
 	*x = PlayerSlotInfo{}
-	mi := &file_game_session_proto_msgTypes[4]
+	mi := &file_proto_game_session_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -296,7 +296,7 @@ func (x *PlayerSlotInfo) String() string {
 func (*PlayerSlotInfo) ProtoMessage() {}
 
 func (x *PlayerSlotInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[4]
+	mi := &file_proto_game_session_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -309,7 +309,7 @@ func (x *PlayerSlotInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerSlotInfo.ProtoReflect.Descriptor instead.
 func (*PlayerSlotInfo) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{4}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PlayerSlotInfo) GetSlotNumber() int32 {
@@ -349,7 +349,7 @@ type GetLobbyRequest struct {
 
 func (x *GetLobbyRequest) Reset() {
 	*x = GetLobbyRequest{}
-	mi := &file_game_session_proto_msgTypes[5]
+	mi := &file_proto_game_session_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -361,7 +361,7 @@ func (x *GetLobbyRequest) String() string {
 func (*GetLobbyRequest) ProtoMessage() {}
 
 func (x *GetLobbyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[5]
+	mi := &file_proto_game_session_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -374,7 +374,7 @@ func (x *GetLobbyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLobbyRequest.ProtoReflect.Descriptor instead.
 func (*GetLobbyRequest) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{5}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetLobbyRequest) GetSessionId() string {
@@ -393,7 +393,7 @@ type WatchLobbyRequest struct {
 
 func (x *WatchLobbyRequest) Reset() {
 	*x = WatchLobbyRequest{}
-	mi := &file_game_session_proto_msgTypes[6]
+	mi := &file_proto_game_session_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -405,7 +405,7 @@ func (x *WatchLobbyRequest) String() string {
 func (*WatchLobbyRequest) ProtoMessage() {}
 
 func (x *WatchLobbyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[6]
+	mi := &file_proto_game_session_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -418,7 +418,7 @@ func (x *WatchLobbyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchLobbyRequest.ProtoReflect.Descriptor instead.
 func (*WatchLobbyRequest) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{6}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *WatchLobbyRequest) GetSessionId() string {
@@ -439,7 +439,7 @@ type SessionLobbyResponse struct {
 
 func (x *SessionLobbyResponse) Reset() {
 	*x = SessionLobbyResponse{}
-	mi := &file_game_session_proto_msgTypes[7]
+	mi := &file_proto_game_session_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -451,7 +451,7 @@ func (x *SessionLobbyResponse) String() string {
 func (*SessionLobbyResponse) ProtoMessage() {}
 
 func (x *SessionLobbyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[7]
+	mi := &file_proto_game_session_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -464,7 +464,7 @@ func (x *SessionLobbyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionLobbyResponse.ProtoReflect.Descriptor instead.
 func (*SessionLobbyResponse) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{7}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SessionLobbyResponse) GetSessionId() string {
@@ -497,7 +497,7 @@ type LaunchSessionRequest struct {
 
 func (x *LaunchSessionRequest) Reset() {
 	*x = LaunchSessionRequest{}
-	mi := &file_game_session_proto_msgTypes[8]
+	mi := &file_proto_game_session_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +509,7 @@ func (x *LaunchSessionRequest) String() string {
 func (*LaunchSessionRequest) ProtoMessage() {}
 
 func (x *LaunchSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[8]
+	mi := &file_proto_game_session_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +522,7 @@ func (x *LaunchSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LaunchSessionRequest.ProtoReflect.Descriptor instead.
 func (*LaunchSessionRequest) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{8}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *LaunchSessionRequest) GetSessionId() string {
@@ -543,7 +543,7 @@ type LaunchSessionResponse struct {
 
 func (x *LaunchSessionResponse) Reset() {
 	*x = LaunchSessionResponse{}
-	mi := &file_game_session_proto_msgTypes[9]
+	mi := &file_proto_game_session_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -555,7 +555,7 @@ func (x *LaunchSessionResponse) String() string {
 func (*LaunchSessionResponse) ProtoMessage() {}
 
 func (x *LaunchSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_game_session_proto_msgTypes[9]
+	mi := &file_proto_game_session_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -568,7 +568,7 @@ func (x *LaunchSessionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LaunchSessionResponse.ProtoReflect.Descriptor instead.
 func (*LaunchSessionResponse) Descriptor() ([]byte, []int) {
-	return file_game_session_proto_rawDescGZIP(), []int{9}
+	return file_proto_game_session_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *LaunchSessionResponse) GetSuccess() bool {
@@ -592,11 +592,11 @@ func (x *LaunchSessionResponse) GetMessage() string {
 	return ""
 }
 
-var File_game_session_proto protoreflect.FileDescriptor
+var File_proto_game_session_proto protoreflect.FileDescriptor
 
-const file_game_session_proto_rawDesc = "" +
+const file_proto_game_session_proto_rawDesc = "" +
 	"\n" +
-	"\x12game_session.proto\x12\x1cworldpinball.gamesessions.v1\"\xbb\x01\n" +
+	"\x18proto/game_session.proto\x12\x1cworldpinball.gamesessions.v1\"\xbb\x01\n" +
 	"\x10AddPlayerRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x1f\n" +
@@ -663,19 +663,19 @@ const file_game_session_proto_rawDesc = "" +
 	"\bGetLobby\x12-.worldpinball.gamesessions.v1.GetLobbyRequest\x1a2.worldpinball.gamesessions.v1.SessionLobbyResponseBQZ%SetSecrets/internal/proto/gamesession\xaa\x02'WorldPinball.Api.Protos.V1.GameSessionsb\x06proto3"
 
 var (
-	file_game_session_proto_rawDescOnce sync.Once
-	file_game_session_proto_rawDescData []byte
+	file_proto_game_session_proto_rawDescOnce sync.Once
+	file_proto_game_session_proto_rawDescData []byte
 )
 
-func file_game_session_proto_rawDescGZIP() []byte {
-	file_game_session_proto_rawDescOnce.Do(func() {
-		file_game_session_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_game_session_proto_rawDesc), len(file_game_session_proto_rawDesc)))
+func file_proto_game_session_proto_rawDescGZIP() []byte {
+	file_proto_game_session_proto_rawDescOnce.Do(func() {
+		file_proto_game_session_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_game_session_proto_rawDesc), len(file_proto_game_session_proto_rawDesc)))
 	})
-	return file_game_session_proto_rawDescData
+	return file_proto_game_session_proto_rawDescData
 }
 
-var file_game_session_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
-var file_game_session_proto_goTypes = []any{
+var file_proto_game_session_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_proto_game_session_proto_goTypes = []any{
 	(*AddPlayerRequest)(nil),      // 0: worldpinball.gamesessions.v1.AddPlayerRequest
 	(*AddPlayerResponse)(nil),     // 1: worldpinball.gamesessions.v1.AddPlayerResponse
 	(*KickPlayerRequest)(nil),     // 2: worldpinball.gamesessions.v1.KickPlayerRequest
@@ -687,7 +687,7 @@ var file_game_session_proto_goTypes = []any{
 	(*LaunchSessionRequest)(nil),  // 8: worldpinball.gamesessions.v1.LaunchSessionRequest
 	(*LaunchSessionResponse)(nil), // 9: worldpinball.gamesessions.v1.LaunchSessionResponse
 }
-var file_game_session_proto_depIdxs = []int32{
+var file_proto_game_session_proto_depIdxs = []int32{
 	4, // 0: worldpinball.gamesessions.v1.SessionLobbyResponse.slots:type_name -> worldpinball.gamesessions.v1.PlayerSlotInfo
 	0, // 1: worldpinball.gamesessions.v1.GameSessionService.AddPlayer:input_type -> worldpinball.gamesessions.v1.AddPlayerRequest
 	2, // 2: worldpinball.gamesessions.v1.GameSessionService.KickPlayer:input_type -> worldpinball.gamesessions.v1.KickPlayerRequest
@@ -706,29 +706,29 @@ var file_game_session_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_game_session_proto_init() }
-func file_game_session_proto_init() {
-	if File_game_session_proto != nil {
+func init() { file_proto_game_session_proto_init() }
+func file_proto_game_session_proto_init() {
+	if File_proto_game_session_proto != nil {
 		return
 	}
-	file_game_session_proto_msgTypes[0].OneofWrappers = []any{}
-	file_game_session_proto_msgTypes[2].OneofWrappers = []any{}
-	file_game_session_proto_msgTypes[4].OneofWrappers = []any{}
+	file_proto_game_session_proto_msgTypes[0].OneofWrappers = []any{}
+	file_proto_game_session_proto_msgTypes[2].OneofWrappers = []any{}
+	file_proto_game_session_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_session_proto_rawDesc), len(file_game_session_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_game_session_proto_rawDesc), len(file_proto_game_session_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_game_session_proto_goTypes,
-		DependencyIndexes: file_game_session_proto_depIdxs,
-		MessageInfos:      file_game_session_proto_msgTypes,
+		GoTypes:           file_proto_game_session_proto_goTypes,
+		DependencyIndexes: file_proto_game_session_proto_depIdxs,
+		MessageInfos:      file_proto_game_session_proto_msgTypes,
 	}.Build()
-	File_game_session_proto = out.File
-	file_game_session_proto_goTypes = nil
-	file_game_session_proto_depIdxs = nil
+	File_proto_game_session_proto = out.File
+	file_proto_game_session_proto_goTypes = nil
+	file_proto_game_session_proto_depIdxs = nil
 }

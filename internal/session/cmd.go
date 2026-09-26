@@ -104,8 +104,9 @@ func NewStartCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "start",
-		Short: "Start an authenticated game session",
+		Use:     "create",
+		Aliases: []string{"create-game", "start"},
+		Short:   "Create a new game session lobby",
 		Run: func(cmd *cobra.Command, args []string) {
 			apiUrl, caFile, deviceId := resolveConfig(startEnv, startApiUrl, startCaFile, startDeviceId)
 			if deviceId == "" {
@@ -124,10 +125,10 @@ func NewStartCmd() *cobra.Command {
 			fmt.Printf("⏳ [%s] Signing canonical request and contacting server (%s)...\n", strings.ToUpper(startEnv), apiUrl)
 			resp, err := StartSession(apiUrl, deviceId, machine, startMode, startCertFile, startKeyFile, caFile)
 			if err != nil {
-				fmt.Printf("Failed to start session: %v\n", err)
+				fmt.Printf("Failed to create session: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("✔ Session started successfully!\n")
+			fmt.Printf("✔ Game session created successfully! Lobby is open.\n")
 			fmt.Printf("  Session ID  : %s\n", resp.SessionID)
 			fmt.Printf("  Server Time : %d\n", resp.ServerTime)
 		},
@@ -309,10 +310,11 @@ func NewLobbyCmd() *cobra.Command {
 		},
 	}
 
-	// 4. Subcommand: launch
+	// 4. Subcommand: launch (or start)
 	launchCmd := &cobra.Command{
-		Use:   "launch",
-		Short: "Launch the game session, moving it from lobby to started",
+		Use:     "launch",
+		Aliases: []string{"start"},
+		Short:   "Launch / start the game session, moving it from lobby to running",
 		Run: func(c *cobra.Command, args []string) {
 			if sessionID == "" {
 				fmt.Println("Error: --session-id is required")
