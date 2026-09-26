@@ -382,9 +382,13 @@ func main() {
 				fmt.Printf("Failed to submit score: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("✔ Score submitted successfully!\n")
-			for _, id := range resp.ScoreEntryIDs {
-				fmt.Printf("  Score Entry ID : %s\n", id)
+			fmt.Printf("✔ Scores submitted successfully (%d player(s))!\n", len(resp.ScoreEntryIDs))
+			for i, id := range resp.ScoreEntryIDs {
+				if i < len(scores) {
+					fmt.Printf("  • Slot %d | Score: %d -> Entry ID: %s\n", scores[i].SlotNumber, scores[i].Score, id)
+				} else {
+					fmt.Printf("  • Entry ID: %s\n", id)
+				}
 			}
 		},
 	}
