@@ -1,0 +1,317 @@
+package session
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
+	"SetSecrets/internal/enroll"
+	gamesession "SetSecrets/internal/proto/gamesession"
+	"SetSecrets/internal/tpm"
+
+	"github.com/spf13/cobra"
+)
+
+// resolveConfig resolves API URL, CA file, and device ID based on environment and flags.
+func resolveConfig(envName, customUrl, customCa, customDevice string) (string, string, string) {
+	apiUrl := "https://localhost:7010"
+	caFile := ""
+
+	switch strings.ToLower(envName) {
+	case "staging":
+		apiUrl = "https://localhost:7010"
+		caFile = "root_ca.crt"
+	case "prod", "production":
+		apiUrl = "https://api.worldpinball.com"
+		caFile = ""
+	default: // dev
+		apiUrl = "https://localhost:7010"
+		caFile = ""
+	}
+
+	if customUrl != "" {
+		apiUrl = customUrl
+	}
+	if customCa != "" {
+		caFile = customCa
+	}
+
+	deviceId := customDevice
+	if deviceId == "" {
+		if cfg, err := enroll.LoadConfigFile("enroll.json"); err == nil && cfg.DeviceId != "" {
+			deviceId = cfg.DeviceId
+			fmt.Printf("ℹ Auto-detected Device ID from enroll.json: %s\n", deviceId)
+		}
+	}
+
+	return apiUrl, caFile, deviceId
+}
+
+// parseScores parses score strings like '1:2500000,2:1800000' or single score/slot flags.
+func parseScores(scoresStr string, singleScore int64, singleSlot int) ([]SlotScoreRequest, error) {
+	if strings.TrimSpace(scoresStr) == "" {
+		return []SlotScoreRequest{
+			{
+				SlotNumber: singleSlot,
+				Score:      singleScore,
+			},
+		}, nil
+	}
+
+	parts := strings.Split(scoresStr, ",")
+	var result []SlotScoreRequest
+	for i, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if strings.Contains(part, ":") {
+			kv := strings.SplitN(part, ":", 2)
+			slot, err := strconv.Atoi(strings.TrimSpace(kv[0]))
+			if err != nil {
+				return nil, fmt.Errorf("invalid slot in '%s': %w", part, err)
+			}
+			score, err := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid score in '%s': %w", part, err)
+			}
+			result = append(result, SlotScoreRequest{SlotNumber: slot, Score: score})
+		} else {
+			score, err := strconv.ParseInt(part, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid score '%s': %w", part, err)
+			}
+			result = append(result, SlotScoreRequest{SlotNumber: i + 1, Score: score})
+		}
+	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("no valid scores found in --scores '%s'", scoresStr)
+	}
+	return result, nil
+}
+
+// NewStartCmd creates the 'start' command to initiate an authenticated game session.
+func NewStartCmd() *cobra.Command {
+	var (
+		startDeviceId string
+		startMode     string
+		startApiUrl   string
+		startEnv      string
+		startKeyFile  string
+		startCertFile string
+		startCaFile   string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "start",
+		Short: "Start an authenticated game session",
+		Run: func(cmd *cobra.Command, args []string) {
+			apiUrl, caFile, deviceId := resolveConfig(startEnv, startApiUrl, startCaFile, startDeviceId)
+			if deviceId == "" {
+				fmt.Println("Error: --device-id is required (or provide enroll.json)")
+				os.Exit(1)
+			}
+
+			machine := tpm.NewSimulatedMachine()
+			defer func() {
+				_ = machine.Close()
+			}()
+			if err := machine.LoadKeyFromFile(startKeyFile); err != nil {
+				fmt.Printf("Error loading private key from %s: %v\n", startKeyFile, err)
+				os.Exit(1)
+			}
+			fmt.Printf("⏳ [%s] Signing canonical request and contacting server (%s)...\n", strings.ToUpper(startEnv), apiUrl)
+			resp, err := StartSession(apiUrl, deviceId, machine, startMode, startCertFile, startKeyFile, caFile)
+			if err != nil {
+				fmt.Printf("Failed to start session: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("✔ Session started successfully!\n")
+			fmt.Printf("  Session ID  : %s\n", resp.SessionID)
+			fmt.Printf("  Server Time : %d\n", resp.ServerTime)
+		},
+	}
+
+	cmd.Flags().StringVar(&startEnv, "env", "dev", "Target environment profile: dev, staging, prod")
+	cmd.Flags().StringVar(&startApiUrl, "url", "", "Override API base URL")
+	cmd.Flags().StringVar(&startDeviceId, "device-id", "", "Device GUID registered on the server (falls back to enroll.json)")
+	cmd.Flags().StringVar(&startMode, "mode", "mode-1", "Game mode code")
+	cmd.Flags().StringVar(&startKeyFile, "key", "device.key", "Path to the private key PEM file")
+	cmd.Flags().StringVar(&startCertFile, "cert", "device.crt", "Path to the X.509 certificate file")
+	cmd.Flags().StringVar(&startCaFile, "ca", "", "Path to the root CA certificate file (override)")
+
+	return cmd
+}
+
+// NewSubmitCmd creates the 'submit' command to submit scores and close a game session.
+func NewSubmitCmd() *cobra.Command {
+	var (
+		submitDeviceId  string
+		submitSessionId string
+		submitScore     int64
+		submitSlot      int
+		submitScores    string
+		submitApiUrl    string
+		submitEnv       string
+		submitKeyFile   string
+		submitCertFile  string
+		submitCaFile    string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "submit",
+		Short: "Submit player score and end the game session",
+		Run: func(cmd *cobra.Command, args []string) {
+			apiUrl, caFile, deviceId := resolveConfig(submitEnv, submitApiUrl, submitCaFile, submitDeviceId)
+			if deviceId == "" || submitSessionId == "" {
+				fmt.Println("Error: --session-id is required (and --device-id or enroll.json)")
+				os.Exit(1)
+			}
+
+			scores, err := parseScores(submitScores, submitScore, submitSlot)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				os.Exit(1)
+			}
+
+			machine := tpm.NewSimulatedMachine()
+			defer func() {
+				_ = machine.Close()
+			}()
+			if err := machine.LoadKeyFromFile(submitKeyFile); err != nil {
+				fmt.Printf("Error loading private key from %s: %v\n", submitKeyFile, err)
+				os.Exit(1)
+			}
+			fmt.Printf("⏳ [%s] Signing score submission and contacting server (%s)...\n", strings.ToUpper(submitEnv), apiUrl)
+			resp, err := SubmitScore(apiUrl, deviceId, machine, submitSessionId, scores, submitCertFile, submitKeyFile, caFile)
+			if err != nil {
+				fmt.Printf("Failed to submit score: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("✔ Scores submitted successfully (%d player(s))!\n", len(resp.ScoreEntryIDs))
+			for i, id := range resp.ScoreEntryIDs {
+				if i < len(scores) {
+					fmt.Printf("  • Slot %d | Score: %d -> Entry ID: %s\n", scores[i].SlotNumber, scores[i].Score, id)
+				} else {
+					fmt.Printf("  • Entry ID: %s\n", id)
+				}
+			}
+		},
+	}
+
+	cmd.Flags().StringVar(&submitEnv, "env", "dev", "Target environment profile: dev, staging, prod")
+	cmd.Flags().StringVar(&submitApiUrl, "url", "", "Override API base URL")
+	cmd.Flags().StringVar(&submitDeviceId, "device-id", "", "Device GUID registered on the server (falls back to enroll.json)")
+	cmd.Flags().StringVar(&submitSessionId, "session-id", "", "Game Session GUID")
+	cmd.Flags().Int64Var(&submitScore, "score", 1250000, "Single player final score to submit (default when --scores is not set)")
+	cmd.Flags().IntVar(&submitSlot, "slot", 1, "Single player slot number 1-4 (default when --scores is not set)")
+	cmd.Flags().StringVar(&submitScores, "scores", "", "Comma-separated list of scores or slot:score (e.g. '1:2500000,2:1800000' or '2500000,1800000')")
+	cmd.Flags().StringVar(&submitKeyFile, "key", "device.key", "Path to the private key PEM file")
+	cmd.Flags().StringVar(&submitCertFile, "cert", "device.crt", "Path to the X.509 certificate file")
+	cmd.Flags().StringVar(&submitCaFile, "ca", "", "Path to the root CA certificate file (override)")
+
+	return cmd
+}
+
+// PrintLobby renders the 4 slots and state in a readable terminal format.
+func PrintLobby(resp *gamesession.SessionLobbyResponse) {
+	fmt.Printf("\n🎮 Session : %s | State: %s\n", resp.SessionId, resp.SessionState)
+	fmt.Println("───────────────────────────────────────────────────")
+	for _, slot := range resp.Slots {
+		status := "🟢 Occupied"
+		details := ""
+		if !slot.IsOccupied {
+			status = "⚪ Empty"
+		} else if slot.UserId != nil {
+			details = fmt.Sprintf("User: %s", *slot.UserId)
+		} else if slot.GuestInitials != nil {
+			details = fmt.Sprintf("Guest: %s", *slot.GuestInitials)
+		}
+		fmt.Printf("  Slot %d : %-12s %s\n", slot.SlotNumber, status, details)
+	}
+	fmt.Println("───────────────────────────────────────────────────")
+}
+
+// NewLobbyCmd creates the 'lobby' Cobra command and its subcommands (get, kick, watch).
+func NewLobbyCmd() *cobra.Command {
+	var (
+		sessionID string
+		slot      int32
+		reason    string
+		url       string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "lobby",
+		Short: "Inspect and manage game session lobby slots (get, kick, watch)",
+	}
+
+	cmd.PersistentFlags().StringVar(&sessionID, "session-id", "", "Game Session GUID")
+	cmd.PersistentFlags().StringVar(&url, "url", "https://localhost:7010", "gRPC Server URL")
+
+	// Subcommand: get
+	getCmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get current lobby status and slots",
+		Run: func(c *cobra.Command, args []string) {
+			if sessionID == "" {
+				fmt.Println("Error: --session-id is required")
+				os.Exit(1)
+			}
+			resp, err := GetLobby(c.Context(), url, true, sessionID)
+			if err != nil {
+				fmt.Printf("Failed to get lobby: %v\n", err)
+				os.Exit(1)
+			}
+			PrintLobby(resp)
+		},
+	}
+
+	// Subcommand: kick
+	kickCmd := &cobra.Command{
+		Use:   "kick",
+		Short: "Kick a player from a slot",
+		Run: func(c *cobra.Command, args []string) {
+			if sessionID == "" || slot < 1 || slot > 4 {
+				fmt.Println("Error: --session-id and a valid --slot (1-4) are required")
+				os.Exit(1)
+			}
+			resp, err := KickPlayer(c.Context(), url, true, sessionID, slot, reason)
+			if err != nil {
+				fmt.Printf("Failed to kick player: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("✔ Player in slot %d kicked successfully (%s)\n", resp.SlotNumber, resp.Message)
+		},
+	}
+	kickCmd.Flags().Int32Var(&slot, "slot", 0, "Slot number to kick (1-4)")
+	kickCmd.Flags().StringVar(&reason, "reason", "", "Optional kick reason")
+
+	// Subcommand: watch
+	watchCmd := &cobra.Command{
+		Use:   "watch",
+		Short: "Watch lobby updates in real-time",
+		Run: func(c *cobra.Command, args []string) {
+			if sessionID == "" {
+				fmt.Println("Error: --session-id is required")
+				os.Exit(1)
+			}
+			fmt.Printf("👀 Watching lobby for session %s (Ctrl+C to quit)...\n", sessionID)
+			err := WatchLobby(c.Context(), url, true, sessionID, func(resp *gamesession.SessionLobbyResponse) {
+				PrintLobby(resp)
+			})
+			if err != nil {
+				fmt.Printf("Stream ended with error: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("🏁 Lobby watch completed (session started or closed).")
+		},
+	}
+
+	cmd.AddCommand(getCmd)
+	cmd.AddCommand(kickCmd)
+	cmd.AddCommand(watchCmd)
+
+	return cmd
+}
