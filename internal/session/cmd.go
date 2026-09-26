@@ -204,10 +204,60 @@ func NewSubmitCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			scores, err := parseScores(submitScores, submitScore, submitSlot)
-			if err != nil {
-				fmt.Printf("Error: %v\n", err)
-				os.Exit(1)
+			var scores []SlotScoreRequest
+
+			// 1. User provided explicit --scores flag
+			if submitScores != "" {
+				s, err := parseScores(submitScores, submitScore, submitSlot)
+				if err != nil {
+					fmt.Printf("Error: %v\n", err)
+					os.Exit(1)
+				}
+				scores = s
+			} else {
+				// 2. Smart auto-detection: query live lobby to find active players
+				lobbyResp, err := GetLobby(cmd.Context(), apiUrl, true, submitSessionId)
+				if err == nil && lobbyResp != nil {
+					// Read candidate scores from players.json if available
+					playerScores := make(map[int32]int64)
+					if data, err := os.ReadFile("players.json"); err == nil {
+						var candidates []prompt.PlayerCandidate
+						if err := json.Unmarshal(data, &candidates); err == nil {
+							for _, c := range candidates {
+								if c.Score > 0 {
+									playerScores[c.Slot] = c.Score
+								}
+							}
+						}
+					}
+
+					for _, slot := range lobbyResp.Slots {
+						if slot.IsOccupied {
+							scoreVal := int64(1500000 + int64(slot.SlotNumber)*350000)
+							if val, ok := playerScores[slot.SlotNumber]; ok {
+								scoreVal = val
+							}
+							scores = append(scores, SlotScoreRequest{
+								SlotNumber: int(slot.SlotNumber),
+								Score:      scoreVal,
+							})
+						}
+					}
+
+					if len(scores) > 0 {
+						fmt.Printf("ℹ Auto-detected %d active player(s) in lobby for score submission.\n", len(scores))
+					}
+				}
+
+				// 3. Fallback to default single player if no lobby detected
+				if len(scores) == 0 {
+					s, err := parseScores(submitScores, submitScore, submitSlot)
+					if err != nil {
+						fmt.Printf("Error: %v\n", err)
+						os.Exit(1)
+					}
+					scores = s
+				}
 			}
 
 			machine := tpm.NewSimulatedMachine()
