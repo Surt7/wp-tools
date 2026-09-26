@@ -20,6 +20,11 @@ func TestSubmit_Success(t *testing.T) {
 			return
 		}
 
+		if r.Header.Get("X-Operator-Token") != "test-op-token" {
+			http.Error(w, "missing operator token", http.StatusUnauthorized)
+			return
+		}
+
 		resp := Response{
 			DeviceId:         "dev-1234",
 			MachineId:        "mach-5678",
@@ -39,7 +44,7 @@ func TestSubmit_Success(t *testing.T) {
 		DeviceSerialNumber:   "WP-DEV-001",
 	}
 
-	result, err := Submit(fakeServer.URL, req)
+	result, err := Submit(fakeServer.URL, req, "test-op-token")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

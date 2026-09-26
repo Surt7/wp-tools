@@ -2,12 +2,14 @@ package enroll
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type ConfigFile struct {
@@ -16,6 +18,7 @@ type ConfigFile struct {
 	Token              string `json:"token"`
 	DeviceSerialNumber string `json:"deviceSerialNumber,omitempty"`
 	ApiUrl             string `json:"apiUrl,omitempty"`
+	OperatorToken      string `json:"operatorToken,omitempty"` // <-- Nouveau
 }
 type Request struct {
 	MachineId            string `json:"machineId"`
@@ -31,17 +34,26 @@ type Response struct {
 	CertSerialNumber string `json:"certSerialNumber"`
 }
 
-func Submit(baseUrl string, req Request) (*Response, error) {
+func Submit(baseUrl string, req Request, operatorToken string) (*Response, error) {
 	endpoint := strings.TrimSuffix(baseUrl, "/") + "/api/v1/machines/enroll"
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
-
-	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("HTTP request failed: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	if operatorToken != "" {
+		httpReq.Header.Set("X-Operator-Token", operatorToken)
+	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: strings.Contains(baseUrl, "localhost")},
+	}
+	client := &http.Client{Transport: tr, Timeout: 10 * time.Second}
+	resp, err := client.Do(httpReq)
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {

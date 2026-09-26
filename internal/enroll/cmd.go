@@ -13,11 +13,12 @@ import (
 // NewEnrollCmd creates the 'enroll' command to provision and enroll a physical machine device.
 func NewEnrollCmd() *cobra.Command {
 	var (
-		enrollMachineId string
-		enrollToken     string
-		enrollSerial    string
-		enrollApiUrl    string
-		enrollOutFile   string
+		enrollMachineId     string
+		enrollToken         string
+		enrollSerial        string
+		enrollApiUrl        string
+		enrollOutFile       string
+		enrollOperatorToken string
 	)
 
 	cmd := &cobra.Command{
@@ -75,8 +76,14 @@ func NewEnrollCmd() *cobra.Command {
 				PublicKeyPem:         pubKeyPem,
 				DeviceSerialNumber:   enrollSerial,
 			}
-
-			resp, err := Submit(enrollApiUrl, req)
+			if enrollOperatorToken == "" {
+				if cfg, err := LoadConfigFile("enroll.json"); err == nil && cfg.OperatorToken != "" {
+					enrollOperatorToken = cfg.OperatorToken
+				} else {
+					enrollOperatorToken = os.Getenv("WP_OPERATOR_TOKEN")
+				}
+			}
+			resp, err := Submit(enrollApiUrl, req, enrollOperatorToken)
 			if err != nil {
 				fmt.Printf("Enrollment failed: %v\n", err)
 				os.Exit(1)
@@ -107,6 +114,7 @@ func NewEnrollCmd() *cobra.Command {
 	cmd.Flags().StringVar(&enrollSerial, "serial", "", "Physical device serial number")
 	cmd.Flags().StringVar(&enrollApiUrl, "url", "http://localhost:5000", "Base URL of the ASP.NET Core API")
 	cmd.Flags().StringVarP(&enrollOutFile, "out", "o", "device.crt", "Output path for the X.509 certificate")
+	cmd.Flags().StringVar(&enrollOperatorToken, "operator-token", "", "Operator authorization token (or WP_OPERATOR_TOKEN env var)")
 
 	return cmd
 }
