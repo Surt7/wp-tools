@@ -151,7 +151,7 @@ func executeSignedRequest[T any](client *http.Client, apiUrl, method, path, devi
 	return &result, nil
 }
 
-func StartSession(apiUrl, deviceID string, signer Signer, modeCode, certPath, keyPath, caPath string) (*StartResponse, error) {
+func CreateSession(apiUrl, deviceID string, signer Signer, modeCode, certPath, keyPath, caPath string) (*StartResponse, error) {
 	client, err := createSecureHttpClient(certPath, keyPath, caPath)
 	if err != nil {
 		return nil, err
@@ -162,7 +162,11 @@ func StartSession(apiUrl, deviceID string, signer Signer, modeCode, certPath, ke
 		ClientVersion: "1.0.0",
 	}
 
-	return executeSignedRequest[StartResponse](client, apiUrl, http.MethodPost, "/api/v1/sessions/start", deviceID, signer, reqBody)
+	return executeSignedRequest[StartResponse](client, apiUrl, http.MethodPost, "/api/v1/sessions/create", deviceID, signer, reqBody)
+}
+
+func StartSession(apiUrl, deviceID string, signer Signer, modeCode, certPath, keyPath, caPath string) (*StartResponse, error) {
+	return CreateSession(apiUrl, deviceID, signer, modeCode, certPath, keyPath, caPath)
 }
 
 func SubmitScore(apiUrl, deviceID string, signer Signer, sessionID string, scores []SlotScoreRequest, certPath, keyPath, caPath string) (*SubmitScoreResponse, error) {
