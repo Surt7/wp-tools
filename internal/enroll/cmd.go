@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"SetSecrets/internal/prompt"
+	"SetSecrets/internal/target"
 	"SetSecrets/internal/tpm"
 
 	"github.com/spf13/cobra"
@@ -26,6 +27,10 @@ func NewEnrollCmd() *cobra.Command {
 		Short: "Generate TPM key and enroll device to get X.509 certificate",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
+			if enrollApiUrl == "" {
+				enrollApiUrl = target.Current().ApiUrl
+			}
+
 			// 1. Auto-detect local enroll.json file (e.g. from USB key)
 			if cfg, err := LoadConfigFile("enroll.json"); err == nil {
 				if enrollMachineId == "" {
@@ -37,7 +42,7 @@ func NewEnrollCmd() *cobra.Command {
 				if enrollSerial == "" {
 					enrollSerial = cfg.DeviceSerialNumber
 				}
-				if cfg.ApiUrl != "" && enrollApiUrl == "http://localhost:5000" {
+				if cfg.ApiUrl != "" && (enrollApiUrl == target.AspBackend.ApiUrl || enrollApiUrl == target.SpringBackend.ApiUrl) {
 					enrollApiUrl = cfg.ApiUrl
 				}
 				fmt.Println("📁 Loaded configuration from enroll.json")
@@ -112,7 +117,7 @@ func NewEnrollCmd() *cobra.Command {
 	cmd.Flags().StringVar(&enrollMachineId, "machine-id", "", "Machine GUID provisioned by Admin")
 	cmd.Flags().StringVar(&enrollToken, "token", "", "One-time enrollment token")
 	cmd.Flags().StringVar(&enrollSerial, "serial", "", "Physical device serial number")
-	cmd.Flags().StringVar(&enrollApiUrl, "url", "http://localhost:5000", "Base URL of the ASP.NET Core API")
+	cmd.Flags().StringVar(&enrollApiUrl, "url", "", "Base URL of the API (defaults to active backend target)")
 	cmd.Flags().StringVarP(&enrollOutFile, "out", "o", "device.crt", "Output path for the X.509 certificate")
 	cmd.Flags().StringVar(&enrollOperatorToken, "operator-token", "", "Operator authorization token (or WP_OPERATOR_TOKEN env var)")
 

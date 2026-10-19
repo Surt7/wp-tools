@@ -10,6 +10,7 @@ import (
 	"SetSecrets/internal/enroll"
 	"SetSecrets/internal/prompt"
 	gamesession "SetSecrets/internal/proto/gamesession"
+	"SetSecrets/internal/target"
 	"SetSecrets/internal/tpm"
 
 	"github.com/spf13/cobra"
@@ -22,18 +23,21 @@ type SessionFile struct {
 
 // resolveConfig resolves API URL, CA file, and device ID based on environment and flags.
 func resolveConfig(envName, customUrl, customCa, customDevice string) (string, string, string) {
-	apiUrl := "https://localhost:7010"
+	backend := target.Current()
+	apiUrl := backend.ApiUrl
 	caFile := ""
 
 	switch strings.ToLower(envName) {
 	case "staging":
-		apiUrl = "https://localhost:7010"
-		caFile = "root_ca.crt"
+		apiUrl = backend.ApiUrl
+		if backend.UseTls {
+			caFile = "root_ca.crt"
+		}
 	case "prod", "production":
 		apiUrl = "https://api.worldpinball.com"
 		caFile = ""
 	default: // dev
-		apiUrl = "https://localhost:7010"
+		apiUrl = backend.ApiUrl
 		caFile = ""
 	}
 
@@ -53,6 +57,16 @@ func resolveConfig(envName, customUrl, customCa, customDevice string) (string, s
 	}
 
 	return apiUrl, caFile, deviceId
+}
+
+// resolveGrpcTarget resolves gRPC target URL and TLS flag based on target backend.
+func resolveGrpcTarget(customUrl string) (string, bool) {
+	backend := target.Current()
+	if customUrl != "" {
+		useTls := strings.HasPrefix(strings.ToLower(customUrl), "https://")
+		return customUrl, useTls
+	}
+	return backend.GrpcUrl, backend.UseTls
 }
 
 // resolveSessionID returns the explicit sessionID if provided, otherwise reads it from session.json.
@@ -333,7 +347,7 @@ func NewLobbyCmd() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringVar(&sessionID, "session-id", "", "Game Session GUID")
-	cmd.PersistentFlags().StringVar(&url, "url", "https://localhost:7010", "gRPC Server URL")
+	cmd.PersistentFlags().StringVar(&url, "url", "", "gRPC Server URL (defaults to active backend target)")
 
 	// Subcommand: get
 	getCmd := &cobra.Command{
@@ -345,7 +359,8 @@ func NewLobbyCmd() *cobra.Command {
 				fmt.Println("Error: --session-id is required (or run 'wp-tools create' first)")
 				os.Exit(1)
 			}
-			resp, err := GetLobby(c.Context(), url, true, sid)
+			grpcTarget, useTls := resolveGrpcTarget(url)
+			resp, err := GetLobby(c.Context(), grpcTarget, useTls, sid)
 			if err != nil {
 				fmt.Printf("Failed to get lobby: %v\n", err)
 				os.Exit(1)
@@ -364,7 +379,8 @@ func NewLobbyCmd() *cobra.Command {
 				fmt.Println("Error: --session-id and a valid --slot (1-4) are required")
 				os.Exit(1)
 			}
-			resp, err := KickPlayer(c.Context(), url, true, sid, slot, reason)
+			grpcTarget, useTls := resolveGrpcTarget(url)
+			resp, err := KickPlayer(c.Context(), grpcTarget, useTls, sid, slot, reason)
 			if err != nil {
 				fmt.Printf("Failed to kick player: %v\n", err)
 				os.Exit(1)
@@ -385,8 +401,9 @@ func NewLobbyCmd() *cobra.Command {
 				fmt.Println("Error: --session-id is required (or run 'wp-tools create' first)")
 				os.Exit(1)
 			}
+			grpcTarget, useTls := resolveGrpcTarget(url)
 			fmt.Printf("👀 Watching lobby for session %s (Ctrl+C to quit)...\n", sid)
-			err := WatchLobby(c.Context(), url, true, sid, func(resp *gamesession.SessionLobbyResponse) {
+			err := WatchLobby(c.Context(), grpcTarget, useTls, sid, func(resp *gamesession.SessionLobbyResponse) {
 				PrintLobby(resp)
 			})
 			if err != nil {
@@ -408,7 +425,8 @@ func NewLobbyCmd() *cobra.Command {
 				fmt.Println("Error: --session-id is required (or run 'wp-tools create' first)")
 				os.Exit(1)
 			}
-			resp, err := LaunchSession(c.Context(), url, true, sid)
+			grpcTarget, useTls := resolveGrpcTarget(url)
+			resp, err := LaunchSession(c.Context(), grpcTarget, useTls, sid)
 			if err != nil {
 				fmt.Printf("Failed to launch session: %v\n", err)
 				os.Exit(1)
@@ -433,10 +451,11 @@ func NewLobbyCmd() *cobra.Command {
 				fmt.Println("Error: --session-id is required (or run 'wp-tools create' first)")
 				os.Exit(1)
 			}
+			grpcTarget, useTls := resolveGrpcTarget(url)
 
 			// 1. Direct flags (--slot and --initials)
 			if addSlot >= 1 && addSlot <= 4 && addInitials != "" {
-				resp, err := AddPlayer(c.Context(), url, true, sid, addSlot, addInitials)
+				resp, err := AddPlayer(c.Context(), grpcTarget, useTls, sid, addSlot, addInitials)
 				if err != nil {
 					fmt.Printf("Failed to add player: %v\n", err)
 					os.Exit(1)
@@ -467,7 +486,7 @@ func NewLobbyCmd() *cobra.Command {
 					return
 				}
 				for _, p := range selected {
-					resp, err := AddPlayer(c.Context(), url, true, sid, p.Slot, p.Initials)
+					resp, err := AddPlayer(c.Context(), grpcTarget, useTls, sid, p.Slot, p.Initials)
 					if err != nil {
 						fmt.Printf("❌ Failed to add slot %d (%s): %v\n", p.Slot, p.Initials, err)
 					} else {
