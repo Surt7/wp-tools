@@ -168,7 +168,7 @@ func NewStartCmd() *cobra.Command {
 				fmt.Printf("Error loading private key from %s: %v\n", startKeyFile, err)
 				os.Exit(1)
 			}
-			fmt.Printf("⏳ [%s] Signing canonical request and contacting server (%s)...\n", strings.ToUpper(startEnv), apiUrl)
+			fmt.Printf("[%s] Signing canonical request and contacting server (%s)...\n", strings.ToUpper(startEnv), apiUrl)
 			resp, err := StartSession(apiUrl, deviceId, machine, startMode, startCertFile, startKeyFile, caFile)
 			if err != nil {
 				fmt.Printf("Failed to create session: %v\n", err)
@@ -282,7 +282,7 @@ func NewSubmitCmd() *cobra.Command {
 				fmt.Printf("Error loading private key from %s: %v\n", submitKeyFile, err)
 				os.Exit(1)
 			}
-			fmt.Printf("⏳ [%s] Signing score submission and contacting server (%s)...\n", strings.ToUpper(submitEnv), apiUrl)
+			fmt.Printf("[%s] Signing score submission and contacting server (%s)...\n", strings.ToUpper(submitEnv), apiUrl)
 			resp, err := SubmitScore(apiUrl, deviceId, machine, submitSessionId, scores, submitCertFile, submitKeyFile, caFile)
 			if err != nil {
 				fmt.Printf("Failed to submit score: %v\n", err)
@@ -315,7 +315,7 @@ func NewSubmitCmd() *cobra.Command {
 
 // PrintLobby renders the 4 slots and state in a readable terminal format.
 func PrintLobby(resp *gamesession.SessionLobbyResponse) {
-	fmt.Printf("\n🎮 Session : %s | State: %s\n", resp.SessionId, resp.SessionState)
+	fmt.Printf("\n Session : %s | State: %s\n", resp.SessionId, resp.SessionState)
 	fmt.Println("───────────────────────────────────────────────────")
 	for _, slot := range resp.Slots {
 		status := "🟢 Occupied"
@@ -402,7 +402,7 @@ func NewLobbyCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			grpcTarget, useTls := resolveGrpcTarget(url)
-			fmt.Printf("👀 Watching lobby for session %s (Ctrl+C to quit)...\n", sid)
+			fmt.Printf("[Watch] Watching lobby for session %s (Ctrl+C to quit)...\n", sid)
 			err := WatchLobby(c.Context(), grpcTarget, useTls, sid, func(resp *gamesession.SessionLobbyResponse) {
 				PrintLobby(resp)
 			})
