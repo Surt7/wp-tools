@@ -16,7 +16,7 @@ var (
 	}
 	SpringBackend = BackendConfig{
 		Name:    "Spring Boot",
-		ApiUrl:  "http://localhost:8080",
+		ApiUrl:  "http://localhost:7085",
 		GrpcUrl: "localhost:9090",
 		UseTls:  false,
 	}

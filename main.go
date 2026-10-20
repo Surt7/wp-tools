@@ -19,7 +19,7 @@ func main() {
 	}
 
 	// Global target selection flags
-	rootCmd.PersistentFlags().BoolVar(&target.TargetSpring, "spring", false, "Target Spring Boot backend (HTTP: 8080, gRPC: 9090)")
+	rootCmd.PersistentFlags().BoolVar(&target.TargetSpring, "spring", false, "Target Spring Boot backend (HTTP: 7085, gRPC: 9090)")
 	rootCmd.PersistentFlags().BoolVar(&target.TargetSpring, "springb", false, "Alias for --spring")
 	rootCmd.PersistentFlags().BoolVar(&target.TargetAsp, "asp", false, "Target ASP.NET Core backend (HTTP/gRPC: 7010, default)")
 
