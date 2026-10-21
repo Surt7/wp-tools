@@ -16,9 +16,9 @@ var (
 	}
 	SpringBackend = BackendConfig{
 		Name:    "Spring Boot",
-		ApiUrl:  "http://localhost:7085",
-		GrpcUrl: "localhost:9090",
-		UseTls:  false,
+		ApiUrl:  "https://api.worldpinball.local",
+		GrpcUrl: "api.worldpinball.local:443",
+		UseTls:  true,
 	}
 )
 
