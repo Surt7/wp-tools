@@ -230,7 +230,8 @@ func NewSubmitCmd() *cobra.Command {
 				scores = s
 			} else {
 				// 2. Smart auto-detection: query live lobby to find active players
-				lobbyResp, err := GetLobby(cmd.Context(), apiUrl, true, submitSessionId)
+				grpcTarget, useTls := resolveGrpcTarget(submitApiUrl)
+				lobbyResp, err := GetLobby(cmd.Context(), grpcTarget, useTls, submitSessionId)
 				if err == nil && lobbyResp != nil {
 					// Read candidate scores from players.json if available
 					playerScores := make(map[int32]int64)
