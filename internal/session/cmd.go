@@ -138,7 +138,7 @@ func parseScores(scoresStr string, singleScore int64, singleSlot int) ([]SlotSco
 }
 
 // NewStartCmd creates the 'start' command to initiate an authenticated game session.
-func NewStartCmd() *cobra.Command {
+func NewCreateCmd() *cobra.Command {
 	var (
 		startDeviceId string
 		startMode     string
@@ -151,7 +151,7 @@ func NewStartCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "create",
-		Aliases: []string{"create-game", "start"},
+		Aliases: []string{"create-game"},
 		Short:   "Create a new game session lobby",
 		Run: func(cmd *cobra.Command, args []string) {
 			apiUrl, caFile, deviceId := resolveConfig(startEnv, startApiUrl, startCaFile, startDeviceId)

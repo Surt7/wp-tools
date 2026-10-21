@@ -21,7 +21,7 @@ func main() {
 	// Global target selection flags
 	rootCmd.PersistentFlags().BoolVar(&target.TargetSpring, "spring", false, "Target Spring Boot backend (HTTP: 7085, gRPC: 9090)")
 	rootCmd.PersistentFlags().BoolVar(&target.TargetSpring, "springb", false, "Alias for --spring")
-	rootCmd.PersistentFlags().BoolVar(&target.TargetAsp, "asp", false, "Target ASP.NET Core backend (HTTP/gRPC: 7010, default)")
+	rootCmd.PersistentFlags().BoolVar(&target.TargetAsp, "asp", false, "Target ASP.NET Core backend (HTTP/gRPC: api.worldpinball.local, default)")
 
 	// Environment & Secrets
 	rootCmd.AddCommand(envfile.NewInitCmd())
@@ -32,7 +32,7 @@ func main() {
 	rootCmd.AddCommand(enroll.NewEnrollCmd())
 
 	// Game Sessions & Lobby
-	rootCmd.AddCommand(session.NewStartCmd())
+	rootCmd.AddCommand(session.NewCreateCmd())
 	rootCmd.AddCommand(session.NewSubmitCmd())
 	rootCmd.AddCommand(session.NewLobbyCmd())
 

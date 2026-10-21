@@ -10,8 +10,8 @@ type BackendConfig struct {
 var (
 	AspBackend = BackendConfig{
 		Name:    "ASP.NET Core",
-		ApiUrl:  "https://localhost:7010",
-		GrpcUrl: "https://localhost:7010",
+		ApiUrl:  "https://api.worldpinball.local",
+		GrpcUrl: "api.worldpinball.local:443",
 		UseTls:  true,
 	}
 	SpringBackend = BackendConfig{
