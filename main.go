@@ -7,7 +7,9 @@ import (
 	"SetSecrets/internal/enroll"
 	"SetSecrets/internal/envfile"
 	"SetSecrets/internal/session"
+	"SetSecrets/internal/software"
 	"SetSecrets/internal/target"
+	"SetSecrets/internal/workstation"
 
 	"github.com/spf13/cobra"
 )
@@ -30,6 +32,12 @@ func main() {
 
 	// Machine Provisioning & Enrollment
 	rootCmd.AddCommand(enroll.NewEnrollCmd())
+
+	// Workstation Enrollment
+	rootCmd.AddCommand(workstation.NewWorkstationCmd())
+
+	// Software Code Signing
+	rootCmd.AddCommand(software.NewSoftwareCmd())
 
 	// Game Sessions & Lobby
 	rootCmd.AddCommand(session.NewCreateCmd())

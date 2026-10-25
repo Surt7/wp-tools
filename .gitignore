@@ -27,3 +27,6 @@ bin/
 *.crt
 enroll.json
 session.json
+
+workstation-enroll.json
+software-cert.json

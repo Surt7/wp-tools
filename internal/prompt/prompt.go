@@ -186,3 +186,71 @@ func PrintEnrollSuccess(deviceId, certSerial, certPath, serialNumber string) {
 
 	fmt.Println(cardStyle.Render(content))
 }
+
+// PrintWorkstationEnrollSuccess renders a stylized terminal card for operator workstations.
+func PrintWorkstationEnrollSuccess(name, serial, thumbprint, expires, certPath string) {
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#00D2FF")).
+		MarginBottom(1)
+
+	labelStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#7D56F4")).
+		Width(18)
+
+	valStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFFFFF"))
+
+	cardStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#00D2FF")).
+		Padding(1, 3).
+		Margin(1, 0)
+
+	content := fmt.Sprintf(
+		"%s\n\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s",
+		titleStyle.Render("🔏 WORKSTATION ENROLLED SUCCESSFULLY > NEXT-STEP: PROTECT THE SOFTWARE "),
+		labelStyle.Render("Workstation:"), valStyle.Render(name),
+		labelStyle.Render("Cert Serial:"), valStyle.Render(serial),
+		labelStyle.Render("Thumbprint:"), valStyle.Render(thumbprint),
+		labelStyle.Render("Expires:"), valStyle.Render(expires),
+		labelStyle.Render("Cert Location:"), valStyle.Render(certPath),
+	)
+
+	fmt.Println(cardStyle.Render(content))
+}
+
+// PrintSoftwareCertSuccess renders a stylized terminal card for software code signing certificates.
+func PrintSoftwareCertSuccess(publisher, serial, thumbprint, expires, certPath string) {
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#FFB703")).
+		MarginBottom(1)
+
+	labelStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#7D56F4")).
+		Width(18)
+
+	valStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFFFFF"))
+
+	cardStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#FFB703")).
+		Padding(1, 3).
+		Margin(1, 0)
+
+	content := fmt.Sprintf(
+		"%s\n\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s",
+		titleStyle.Render("📜 SOFTWARE CODE SIGNING CERTIFICATE ISSUED"),
+		labelStyle.Render("Publisher:"), valStyle.Render(publisher),
+		labelStyle.Render("Cert Serial:"), valStyle.Render(serial),
+		labelStyle.Render("Thumbprint:"), valStyle.Render(thumbprint),
+		labelStyle.Render("Expires:"), valStyle.Render(expires),
+		labelStyle.Render("Cert Location:"), valStyle.Render(certPath),
+	)
+
+	fmt.Println(cardStyle.Render(content))
+}
