@@ -18,26 +18,8 @@ func NewInitCmd() *cobra.Command {
 		Use:   "init",
 		Short: "Initialize secrets in .env file",
 		Run: func(cmd *cobra.Command, args []string) {
-			entries, err := LoadFile(".env.example")
-			if err != nil {
-				fmt.Printf("Error loading .env.example: %v\n", err)
-				os.Exit(1)
-			}
-
-			for i := range entries {
-				if entries[i].IsKey && entries[i].IsSecretKey() && (entries[i].NeedsValue() || force) {
-					pwd, err := generator.GenerateRandomPassword(24)
-					if err != nil {
-						fmt.Printf("Error generating password for %s: %v\n", entries[i].Key, err)
-						os.Exit(1)
-					}
-					entries[i].Value = pwd
-					fmt.Printf("✔ Generated secret for: %s\n", entries[i].Key)
-				}
-			}
-
-			if err := SaveFile(".env", entries); err != nil {
-				fmt.Printf("Error saving .env file: %v\n", err)
+			if err := InitFromExample(".env.example", ".env", force); err != nil {
+				fmt.Printf("Error generating .env file: %v\n", err)
 				os.Exit(1)
 			}
 			fmt.Println("\n Successfully generated .env file!")

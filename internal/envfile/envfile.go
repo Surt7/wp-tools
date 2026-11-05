@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"SetSecrets/internal/generator"
 )
 
 type Entry struct {
@@ -143,4 +145,28 @@ func ToMap(entries []Entry) map[string]string {
 		}
 	}
 	return result
+}
+
+// InitFromExample initializes destPath (e.g. .env) from examplePath (.env.example),
+// generating secure random passwords for keys that require them.
+func InitFromExample(examplePath string, destPath string, force bool) error {
+	entries, err := LoadFile(examplePath)
+	if err != nil {
+		return fmt.Errorf("loading %s: %w", examplePath, err)
+	}
+
+	for i := range entries {
+		if entries[i].IsKey && entries[i].IsSecretKey() && (entries[i].NeedsValue() || force) {
+			pwd, err := generator.GenerateRandomPassword(24)
+			if err != nil {
+				return fmt.Errorf("generating password for %s: %w", entries[i].Key, err)
+			}
+			entries[i].Value = pwd
+		}
+	}
+
+	if err := SaveFile(destPath, entries); err != nil {
+		return fmt.Errorf("saving %s: %w", destPath, err)
+	}
+	return nil
 }

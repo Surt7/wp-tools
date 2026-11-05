@@ -3,7 +3,6 @@ package dotnet
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"SetSecrets/internal/envfile"
@@ -29,9 +28,9 @@ func NewDotnetCmd() *cobra.Command {
 		Short: "Sync .env secrets to .NET User Secrets",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			entries, err := envfile.LoadFile(".env")
+			entries, err := EnsureEnvFile(".env", ".env.example", autoInit, dryRun)
 			if err != nil {
-				fmt.Printf("Error loading .env file: %v\n", err)
+				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
 			}
 			envMap := envfile.ToMap(entries)
@@ -111,7 +110,7 @@ func NewDotnetCmd() *cobra.Command {
 						fmt.Printf("Error: project file not found on disk at '%s'\nPlease check the path in %s\n", resolvedPath, ConfigFileName)
 						os.Exit(1)
 					}
-					if err := ensureUserSecretsInitialized(resolvedPath, target, autoInit, dryRun); err != nil {
+					if err := EnsureUserSecretsInitialized(resolvedPath, target, autoInit, dryRun); err != nil {
 						fmt.Printf("Error: %v\n", err)
 						os.Exit(1)
 					}
@@ -141,7 +140,7 @@ func NewDotnetCmd() *cobra.Command {
 					fmt.Printf("Error: project file not found on disk at '%s'\nPlease check the path in %s\n", resolvedPath, ConfigFileName)
 					os.Exit(1)
 				}
-				if err := ensureUserSecretsInitialized(resolvedPath, target, autoInit, dryRun); err != nil {
+				if err := EnsureUserSecretsInitialized(resolvedPath, target, autoInit, dryRun); err != nil {
 					fmt.Printf("Error: %v\n", err)
 					os.Exit(1)
 				}
@@ -184,52 +183,4 @@ func NewDotnetCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&autoInit, "auto-init", false, "Auto-initialize dotnet user-secrets if missing without prompting")
 
 	return cmd
-}
-
-func ensureUserSecretsInitialized(projectPath string, targetName string, autoInit bool, dryRun bool) error {
-	if projectPath == "" {
-		return nil
-	}
-
-	hasSecrets, err := HasUserSecretsId(projectPath)
-	if err != nil {
-		// Could not inspect .csproj (maybe directory or special file) - do not block
-		return nil
-	}
-
-	if hasSecrets {
-		return nil
-	}
-
-	displayName := targetName
-	if displayName == "" {
-		displayName = filepath.Base(projectPath)
-	}
-
-	if dryRun {
-		fmt.Printf("[DRY-RUN] UserSecretsId is not configured in '%s'. Would initialize.\n", displayName)
-		return nil
-	}
-
-	shouldInit := autoInit
-	if !shouldInit {
-		title := fmt.Sprintf("UserSecretsId is not configured in '%s'. Initialize it now?", displayName)
-		desc := "Runs 'dotnet user-secrets init' to add <UserSecretsId> to the project."
-		confirmed, promptErr := prompt.Confirm(title, desc, true)
-		if promptErr != nil {
-			return fmt.Errorf("user-secrets initialization cancelled: %w", promptErr)
-		}
-		shouldInit = confirmed
-	}
-
-	if !shouldInit {
-		return fmt.Errorf("UserSecrets is not initialized for '%s'. Aborting sync", displayName)
-	}
-
-	fmt.Printf("⏳ Initializing UserSecrets for %s...\n", displayName)
-	if err := InitUserSecrets(projectPath); err != nil {
-		return fmt.Errorf("failed initializing UserSecrets: %w", err)
-	}
-	fmt.Printf("✔ UserSecrets initialized for %s\n", displayName)
-	return nil
 }
