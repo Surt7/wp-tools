@@ -120,6 +120,84 @@ func Confirm(title string, description string, defaultYes bool) (bool, error) {
 	return confirmed, nil
 }
 
+// PromptAddTarget prompts for target alias, project path, and environment.
+func PromptAddTarget(availableEnvs []string, defaultEnv string) (alias string, path string, env string, err error) {
+	env = defaultEnv
+	if env == "" && len(availableEnvs) > 0 {
+		env = availableEnvs[0]
+	}
+
+	var envOptions []huh.Option[string]
+	for _, e := range availableEnvs {
+		envOptions = append(envOptions, huh.NewOption(e, e))
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Target Alias").
+				Description("Short name to refer to this project (e.g. billing, hub)").
+				Placeholder("e.g. billing").
+				Value(&alias).
+				Validate(func(s string) error {
+					if strings.TrimSpace(s) == "" {
+						return fmt.Errorf("alias cannot be empty")
+					}
+					return nil
+				}),
+			huh.NewInput().
+				Title("Project Path").
+				Description("Path to .csproj file or project directory").
+				Placeholder(`e.g. D:\Workspace\Project\Project.csproj`).
+				Value(&path).
+				Validate(func(s string) error {
+					if strings.TrimSpace(s) == "" {
+						return fmt.Errorf("path cannot be empty")
+					}
+					return nil
+				}),
+			huh.NewSelect[string]().
+				Title("Target Environment").
+				Options(envOptions...).
+				Value(&env),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		return "", "", "", err
+	}
+
+	return strings.ToLower(strings.TrimSpace(alias)), strings.TrimSpace(path), strings.ToLower(strings.TrimSpace(env)), nil
+}
+
+// SelectTargetToRemove displays an interactive select menu to pick which target to remove.
+func SelectTargetToRemove(targets []string) (string, error) {
+	if len(targets) == 0 {
+		return "", fmt.Errorf("no targets available to remove")
+	}
+
+	var selected string
+	var options []huh.Option[string]
+	for _, t := range targets {
+		options = append(options, huh.NewOption(t, t))
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Select target to remove from config").
+				Options(options...).
+				Value(&selected),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		return "", err
+	}
+
+	return selected, nil
+}
+
 type PlayerCandidate struct {
 	Slot     int32  `json:"slot"`
 	Initials string `json:"initials"`

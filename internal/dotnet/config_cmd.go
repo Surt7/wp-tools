@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"SetSecrets/internal/prompt"
+
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/spf13/cobra"
@@ -14,7 +16,7 @@ import (
 // NewConfigCmd creates the 'config' command to inspect and modify target paths.
 func NewConfigCmd() *cobra.Command {
 	var envFilter string
-	var setEnv string
+	var targetEnv string
 
 	cmd := &cobra.Command{
 		Use:     "config",
@@ -34,19 +36,13 @@ func NewConfigCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&envFilter, "env", "e", "", "Filter to a specific environment (e.g. dev, prod)")
 
-	// Subcommand: set
-	setCmd := &cobra.Command{
-		Use:   "set <alias> <path>",
-		Short: "Set or update a project path in wp-config.json",
-		Args:  cobra.ExactArgs(2),
+	// Subcommand: add (and set)
+	addCmd := &cobra.Command{
+		Use:     "add [alias] [path]",
+		Aliases: []string{"set"},
+		Short:   "Add or update a project path in wp-config.json",
+		Args:    cobra.MaximumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			alias := strings.ToLower(strings.TrimSpace(args[0]))
-			path := strings.TrimSpace(args[1])
-			targetEnv := strings.ToLower(strings.TrimSpace(setEnv))
-			if targetEnv == "" {
-				targetEnv = "dev"
-			}
-
 			cfgPath := FindConfigFile("")
 			cfg, err := LoadConfig(cfgPath)
 			if err != nil {
@@ -54,23 +50,138 @@ func NewConfigCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
+			var alias, path, env string
+
+			if len(args) == 0 {
+				// Interactive Huh TUI mode
+				var availableEnvs []string
+				for e := range cfg.Environments {
+					availableEnvs = append(availableEnvs, e)
+				}
+				sort.Strings(availableEnvs)
+				if len(availableEnvs) == 0 {
+					availableEnvs = []string{"dev", "prod"}
+				}
+
+				defEnv := targetEnv
+				if defEnv == "" {
+					defEnv = cfg.DefaultEnvironment
+				}
+
+				pAlias, pPath, pEnv, err := prompt.PromptAddTarget(availableEnvs, defEnv)
+				if err != nil {
+					fmt.Printf("Operation cancelled: %v\n", err)
+					os.Exit(0)
+				}
+				alias = pAlias
+				path = pPath
+				env = pEnv
+			} else if len(args) == 2 {
+				alias = strings.ToLower(strings.TrimSpace(args[0]))
+				path = strings.TrimSpace(args[1])
+				env = strings.ToLower(strings.TrimSpace(targetEnv))
+				if env == "" {
+					env = cfg.DefaultEnvironment
+					if env == "" {
+						env = "dev"
+					}
+				}
+			} else {
+				fmt.Println("Error: please specify both <alias> and <path>, or run without arguments for interactive form.")
+				os.Exit(1)
+			}
+
 			if cfg.Environments == nil {
 				cfg.Environments = make(map[string]map[string]string)
 			}
-			if cfg.Environments[targetEnv] == nil {
-				cfg.Environments[targetEnv] = make(map[string]string)
+			if cfg.Environments[env] == nil {
+				cfg.Environments[env] = make(map[string]string)
 			}
 
-			cfg.Environments[targetEnv][alias] = path
+			cfg.Environments[env][alias] = path
 			if err := SaveConfig(cfgPath, cfg); err != nil {
 				fmt.Printf("Error saving config: %v\n", err)
 				os.Exit(1)
 			}
 
-			fmt.Printf("✔ Updated '%s' (%s) -> %s\nSaved in %s\n", alias, targetEnv, path, cfgPath)
+			// Feedback on disk validation
+			if _, err := os.Stat(path); err == nil {
+				hasSecrets, _ := HasUserSecretsId(path)
+				if hasSecrets {
+					fmt.Printf("✔ Validated project: exists on disk (UserSecrets configured)\n")
+				} else {
+					fmt.Printf("ℹ Validated project: exists on disk (UserSecrets not yet initialized)\n")
+				}
+			} else {
+				fmt.Printf("⚠️ Warning: project file not found on disk at '%s'\n", path)
+			}
+
+			fmt.Printf("✔ Saved '%s' (%s) -> %s\nSaved in %s\n", alias, env, path, cfgPath)
 		},
 	}
-	setCmd.Flags().StringVarP(&setEnv, "env", "e", "dev", "Target environment (dev, prod)")
+	addCmd.Flags().StringVarP(&targetEnv, "env", "e", "dev", "Target environment (dev, prod)")
+
+	// Subcommand: remove
+	removeCmd := &cobra.Command{
+		Use:     "remove [alias]",
+		Aliases: []string{"rm", "delete"},
+		Short:   "Remove a project target from wp-config.json",
+		Args:    cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			cfgPath := FindConfigFile("")
+			cfg, err := LoadConfig(cfgPath)
+			if err != nil {
+				fmt.Printf("Error loading config: %v\n", err)
+				os.Exit(1)
+			}
+
+			env := strings.ToLower(strings.TrimSpace(targetEnv))
+			if env == "" {
+				env = cfg.DefaultEnvironment
+				if env == "" {
+					env = "dev"
+				}
+			}
+
+			targets, ok := cfg.Environments[env]
+			if !ok || len(targets) == 0 {
+				fmt.Printf("No targets found in environment '%s'\n", env)
+				os.Exit(0)
+			}
+
+			var alias string
+			if len(args) == 0 {
+				var targetNames []string
+				for t := range targets {
+					targetNames = append(targetNames, t)
+				}
+				sort.Strings(targetNames)
+
+				selected, err := prompt.SelectTargetToRemove(targetNames)
+				if err != nil {
+					fmt.Printf("Operation cancelled: %v\n", err)
+					os.Exit(0)
+				}
+				alias = selected
+			} else {
+				alias = strings.ToLower(strings.TrimSpace(args[0]))
+			}
+
+			if _, exists := targets[alias]; !exists {
+				fmt.Printf("Target '%s' not found in environment '%s'\n", alias, env)
+				os.Exit(1)
+			}
+
+			delete(cfg.Environments[env], alias)
+			if err := SaveConfig(cfgPath, cfg); err != nil {
+				fmt.Printf("Error saving config: %v\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Printf("✔ Removed target '%s' (%s) from %s\n", alias, env, cfgPath)
+		},
+	}
+	removeCmd.Flags().StringVarP(&targetEnv, "env", "e", "dev", "Target environment (dev, prod)")
 
 	// Subcommand: path
 	pathCmd := &cobra.Command{
@@ -82,7 +193,8 @@ func NewConfigCmd() *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(setCmd)
+	cmd.AddCommand(addCmd)
+	cmd.AddCommand(removeCmd)
 	cmd.AddCommand(pathCmd)
 
 	return cmd
@@ -134,6 +246,6 @@ func RenderConfigTable(cfg Config, configPath string, envFilter string) string {
 	}
 
 	sb.WriteString(t.Render())
-	sb.WriteString("\n\n" + dim.Render("To update a path: wp-tools config set <alias> <path> [-e <env>]") + "\n")
+	sb.WriteString("\n\n" + dim.Render("Commands: wp-tools config add [alias] [path] | wp-tools config remove [alias]") + "\n")
 	return sb.String()
 }
