@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"SetSecrets/internal/audit"
 	"SetSecrets/internal/dotnet"
 	"SetSecrets/internal/enroll"
 	"SetSecrets/internal/envfile"
@@ -31,6 +32,7 @@ func main() {
 	rootCmd.AddCommand(dotnet.NewDotnetCmd())
 	rootCmd.AddCommand(dotnet.NewStatusCmd())
 	rootCmd.AddCommand(dotnet.NewConfigCmd())
+	rootCmd.AddCommand(audit.NewAuditCmd())
 
 	// Machine Provisioning & Enrollment
 	rootCmd.AddCommand(enroll.NewEnrollCmd())
