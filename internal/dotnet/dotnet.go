@@ -2,7 +2,9 @@ package dotnet
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -52,7 +54,49 @@ func (m *Manager) SetSecret(key string, value string, projectPath string) error 
 	return nil
 }
 
+// InitUserSecrets runs 'dotnet user-secrets init' on the specified project.
+func (m *Manager) InitUserSecrets(projectPath string) error {
+	args := []string{"user-secrets", "init"}
+	if projectPath != "" {
+		args = append(args, "--project", projectPath)
+	}
+
+	output, err := m.Runner.Run("dotnet", args...)
+	if err != nil {
+		return fmt.Errorf("dotnet user-secrets init failed: %s (%w)", string(output), err)
+	}
+	return nil
+}
+
+// HasUserSecretsId checks whether the specified .csproj project file contains a UserSecretsId element.
+func HasUserSecretsId(projectPath string) (bool, error) {
+	targetFile := projectPath
+	if targetFile == "" {
+		targetFile = "."
+	}
+	fi, err := os.Stat(targetFile)
+	if err != nil {
+		return false, err
+	}
+	if fi.IsDir() {
+		files, err := filepath.Glob(filepath.Join(targetFile, "*.csproj"))
+		if err != nil || len(files) == 0 {
+			return false, fmt.Errorf("no .csproj found in directory %s", targetFile)
+		}
+		targetFile = files[0]
+	}
+	data, err := os.ReadFile(targetFile)
+	if err != nil {
+		return false, err
+	}
+	return strings.Contains(string(data), "<UserSecretsId>"), nil
+}
+
 var defaultManager = NewManager(nil)
+
+func InitUserSecrets(projectPath string) error {
+	return defaultManager.InitUserSecrets(projectPath)
+}
 
 func (m *Manager) SyncSecrets(envValues map[string]string, dryRun bool, projectPath string, allowedEnvKeys []string) error {
 	mapping := DefaultMapping()

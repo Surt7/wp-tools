@@ -96,6 +96,30 @@ func SelectSecretsToSync(availableKeys []string, defaultSelected map[string]bool
 	return selected, nil
 }
 
+// Confirm displays an interactive Yes/No confirmation prompt with Huh.
+func Confirm(title string, description string, defaultYes bool) (bool, error) {
+	confirmed := defaultYes
+	confirmField := huh.NewConfirm().
+		Title(title).
+		Affirmative("Yes").
+		Negative("No").
+		Value(&confirmed)
+
+	if description != "" {
+		confirmField.Description(description)
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(confirmField),
+	)
+
+	if err := form.Run(); err != nil {
+		return false, err
+	}
+
+	return confirmed, nil
+}
+
 type PlayerCandidate struct {
 	Slot     int32  `json:"slot"`
 	Initials string `json:"initials"`
