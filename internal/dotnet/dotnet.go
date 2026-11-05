@@ -33,11 +33,12 @@ func NewManager(runner CommandRunner) *Manager {
 
 func DefaultMapping() map[string]string {
 	return map[string]string{
-		"POSTGRES_PASSWORD":     "PostGres:Password",
-		"REDIS_PASSWORD":        "Redis:Password",
-		"RABBITMQ_DEFAULT_PASS": "RabbitMQ:Password",
-		"KEYCLOAK_DB_PASSWORD":  "Keycloak:ClientSecret",
-		"KAFKA_PASSWORD":        "Kafka:Password",
+		"POSTGRES_PASSWORD":       "PostGres:Password",
+		"REDIS_PASSWORD":          "Redis:Password",
+		"RABBITMQ_DEFAULT_PASS":   "RabbitMQ:Password",
+		"KEYCLOAK_DB_PASSWORD":    "Keycloak:ClientSecret",
+		"KAFKA_PASSWORD":          "Kafka:Password",
+		"MONGO_CONNECTION_STRING": "Mongo:ConnectionString",
 	}
 }
 
