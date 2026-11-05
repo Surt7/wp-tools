@@ -46,7 +46,7 @@ func TestSyncSecrets(t *testing.T) {
 		"POSTGRES_PASSWORD": "secret_postgres",
 	}
 
-	err := mgr.SyncSecrets(envValues, true, "")
+	err := mgr.SyncSecrets(envValues, true, "", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestSyncSecrets_Normal(t *testing.T) {
 		"POSTGRES_PASSWORD": "secret_postgres",
 	}
 
-	err := mgr.SyncSecrets(envValues, false, "")
+	err := mgr.SyncSecrets(envValues, false, "", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

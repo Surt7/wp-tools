@@ -22,6 +22,18 @@ func (e Entry) NeedsValue() bool {
 	return e.Value == "CHANGE_ME" || e.Value == ""
 }
 
+func (e Entry) IsSecretKey() bool {
+	if !e.IsKey {
+		return false
+	}
+	upper := strings.ToUpper(e.Key)
+	return strings.Contains(upper, "PASSWORD") ||
+		strings.Contains(upper, "PASS") ||
+		strings.Contains(upper, "SECRET") ||
+		strings.Contains(upper, "TOKEN") ||
+		strings.HasSuffix(upper, "_KEY")
+}
+
 func Parse(r io.Reader) ([]Entry, error) {
 	var entries []Entry
 	scanner := bufio.NewScanner(r)

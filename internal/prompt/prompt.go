@@ -35,6 +35,67 @@ func SelectKeys(keys []string) ([]string, error) {
 	return selected, nil
 }
 
+// SelectTarget displays an interactive select menu to choose a project target.
+func SelectTarget(targets []string) (string, error) {
+	if len(targets) == 0 {
+		return "", fmt.Errorf("no targets available")
+	}
+
+	var selected string
+	var options []huh.Option[string]
+	for _, t := range targets {
+		options = append(options, huh.NewOption(t, t))
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Select target project").
+				Options(options...).
+				Value(&selected),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		return "", err
+	}
+
+	return selected, nil
+}
+
+// SelectSecretsToSync displays an interactive multi-select menu to choose secrets to sync.
+func SelectSecretsToSync(availableKeys []string, defaultSelected map[string]bool) ([]string, error) {
+	if len(availableKeys) == 0 {
+		return nil, fmt.Errorf("no secrets available to sync")
+	}
+
+	var selected []string
+	var options []huh.Option[string]
+	for _, k := range availableKeys {
+		opt := huh.NewOption(k, k)
+		if defaultSelected != nil && defaultSelected[k] {
+			opt = opt.Selected(true)
+		}
+		options = append(options, opt)
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("Select secrets to sync to project").
+				Description("Press Space to toggle, Enter to confirm").
+				Options(options...).
+				Value(&selected),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		return nil, err
+	}
+
+	return selected, nil
+}
+
 type PlayerCandidate struct {
 	Slot     int32  `json:"slot"`
 	Initials string `json:"initials"`

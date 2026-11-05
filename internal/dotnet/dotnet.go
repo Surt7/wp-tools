@@ -3,6 +3,7 @@ package dotnet
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 type CommandRunner interface {
@@ -53,10 +54,22 @@ func (m *Manager) SetSecret(key string, value string, projectPath string) error 
 
 var defaultManager = NewManager(nil)
 
-func (m *Manager) SyncSecrets(envValues map[string]string, dryRun bool, projectPath string) error {
+func (m *Manager) SyncSecrets(envValues map[string]string, dryRun bool, projectPath string, allowedEnvKeys []string) error {
 	mapping := DefaultMapping()
 
+	var filterMap map[string]bool
+	if len(allowedEnvKeys) > 0 {
+		filterMap = make(map[string]bool)
+		for _, k := range allowedEnvKeys {
+			filterMap[strings.ToUpper(strings.TrimSpace(k))] = true
+		}
+	}
+
 	for envKey, dotnetKey := range mapping {
+		if filterMap != nil && !filterMap[strings.ToUpper(envKey)] {
+			continue
+		}
+
 		// If the variable exists in our .env and has a value
 		if val, exists := envValues[envKey]; exists && val != "" {
 
@@ -74,6 +87,6 @@ func (m *Manager) SyncSecrets(envValues map[string]string, dryRun bool, projectP
 
 	return nil
 }
-func SyncSecrets(envValues map[string]string, dryRun bool, projectPath string) error {
-	return defaultManager.SyncSecrets(envValues, dryRun, projectPath)
+func SyncSecrets(envValues map[string]string, dryRun bool, projectPath string, allowedEnvKeys []string) error {
+	return defaultManager.SyncSecrets(envValues, dryRun, projectPath, allowedEnvKeys)
 }

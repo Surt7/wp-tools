@@ -25,7 +25,7 @@ func NewInitCmd() *cobra.Command {
 			}
 
 			for i := range entries {
-				if entries[i].IsKey && (entries[i].NeedsValue() || force) {
+				if entries[i].IsKey && entries[i].IsSecretKey() && (entries[i].NeedsValue() || force) {
 					pwd, err := generator.GenerateRandomPassword(24)
 					if err != nil {
 						fmt.Printf("Error generating password for %s: %v\n", entries[i].Key, err)

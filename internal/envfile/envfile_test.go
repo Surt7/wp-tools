@@ -72,3 +72,29 @@ func TestSetEntry(t *testing.T) {
 		t.Errorf("expected MINIO_PORT=9000, got %s=%s", entries[1].Key, entries[1].Value)
 	}
 }
+
+func TestIsSecretKey(t *testing.T) {
+	tests := []struct {
+		key      string
+		isSecret bool
+	}{
+		{"POSTGRES_PASSWORD", true},
+		{"RABBITMQ_DEFAULT_PASS", true},
+		{"KEYCLOAK_DB_PASSWORD", true},
+		{"JWT_SECRET", true},
+		{"API_TOKEN", true},
+		{"DEVICE_API_KEY", true},
+		{"KEYCLOAK_ADMIN", false},
+		{"RABBITMQ_DEFAULT_USER", false},
+		{"REDIS_HOST", false},
+		{"MONGO_DATABASE", false},
+		{"MONGO_INITDB_ROOT_USERNAME", false},
+	}
+
+	for _, tt := range tests {
+		e := Entry{Key: tt.key, IsKey: true}
+		if got := e.IsSecretKey(); got != tt.isSecret {
+			t.Errorf("IsSecretKey(%q) = %v, want %v", tt.key, got, tt.isSecret)
+		}
+	}
+}
