@@ -4,10 +4,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 const ConfigFileName = "wp-config.json"
+
+// FindConfigFile locates the configuration file either at customPath, in current dir, or next to the executable.
+func FindConfigFile(customPath string) string {
+	if customPath != "" {
+		return customPath
+	}
+	if _, err := os.Stat(ConfigFileName); err == nil {
+		return ConfigFileName
+	}
+	if exePath, err := os.Executable(); err == nil {
+		exeConfig := filepath.Join(filepath.Dir(exePath), ConfigFileName)
+		if _, err := os.Stat(exeConfig); err == nil {
+			return exeConfig
+		}
+	}
+	return ConfigFileName
+}
 
 // Config represents the multi-environment targets configuration.
 type Config struct {
@@ -36,9 +54,7 @@ func DefaultConfig() Config {
 
 // LoadConfig loads the config from file, or creates it with defaults if missing.
 func LoadConfig(filePath string) (Config, error) {
-	if filePath == "" {
-		filePath = ConfigFileName
-	}
+	filePath = FindConfigFile(filePath)
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -60,9 +76,7 @@ func LoadConfig(filePath string) (Config, error) {
 
 // SaveConfig persists the configuration to a JSON file.
 func SaveConfig(filePath string, cfg Config) error {
-	if filePath == "" {
-		filePath = ConfigFileName
-	}
+	filePath = FindConfigFile(filePath)
 
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {

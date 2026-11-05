@@ -30,6 +30,7 @@ func main() {
 	rootCmd.AddCommand(envfile.NewSetCmd())
 	rootCmd.AddCommand(dotnet.NewDotnetCmd())
 	rootCmd.AddCommand(dotnet.NewStatusCmd())
+	rootCmd.AddCommand(dotnet.NewConfigCmd())
 
 	// Machine Provisioning & Enrollment
 	rootCmd.AddCommand(enroll.NewEnrollCmd())
