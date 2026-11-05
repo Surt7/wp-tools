@@ -182,5 +182,7 @@ func NewDotnetCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactive terminal form (Huh UI)")
 	cmd.Flags().BoolVar(&autoInit, "auto-init", false, "Auto-initialize dotnet user-secrets if missing without prompting")
 
+	cmd.AddCommand(NewStatusCmd())
+
 	return cmd
 }

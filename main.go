@@ -29,6 +29,7 @@ func main() {
 	rootCmd.AddCommand(envfile.NewInitCmd())
 	rootCmd.AddCommand(envfile.NewSetCmd())
 	rootCmd.AddCommand(dotnet.NewDotnetCmd())
+	rootCmd.AddCommand(dotnet.NewStatusCmd())
 
 	// Machine Provisioning & Enrollment
 	rootCmd.AddCommand(enroll.NewEnrollCmd())
