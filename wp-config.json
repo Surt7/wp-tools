@@ -4,7 +4,8 @@
     "dev": {
       "hub": "D:\\Workspace\\WorldPinball.GgWp.Hub\\WorldPinball.GgWp.Hub.Api\\WorldPinball.GgWp.Hub.Api.csproj",
       "leaderboard": "C:\\Users\\ippo_\\source\\repos\\Leaderboard_WorldPinball\\WorldPinball.Api\\WorldPinball.Api.csproj",
-      "logistics": "C:\\Users\\ippo_\\source\\repos\\Leaderboard_WorldPinball\\Logistics\\WorldPinball.Logistics.Api\\WorldPinball.Logistics.Api.csproj"
+      "logistics": "C:\\Users\\ippo_\\source\\repos\\Leaderboard_WorldPinball\\Logistics\\WorldPinball.Logistics.Api\\WorldPinball.Logistics.Api.csproj",
+      "media-vault": "D:\\Workspace\\MediaVault\\MediaVault.Api\\MediaVault.Api.csproj"
     },
     "prod": {
       "hub": "/var/www/hub/WorldPinball.GgWp.Hub.Api.csproj",

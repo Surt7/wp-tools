@@ -77,9 +77,9 @@ func NewDotnetCmd() *cobra.Command {
 					if _, hasVal := envMap[envKey]; hasVal {
 						availableKeys = append(availableKeys, envKey)
 
-						// Smart preselection: for 'hub', preselect redis, rabbit, and mongo; for others, preselect all
+						// Smart preselection: for 'hub', preselect redis, rabbit, and postgres; for others, preselect all
 						if targetLower == "hub" {
-							if strings.Contains(envKey, "REDIS") || strings.Contains(envKey, "RABBIT") || strings.Contains(envKey, "MONGO") {
+							if strings.Contains(envKey, "REDIS") || strings.Contains(envKey, "RABBIT") || strings.Contains(envKey, "POSTGRES") {
 								preselected[envKey] = true
 							}
 						} else {
