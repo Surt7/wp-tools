@@ -7,6 +7,7 @@ import (
 	"SetSecrets/internal/dotnet"
 	"SetSecrets/internal/enroll"
 	"SetSecrets/internal/envfile"
+	"SetSecrets/internal/menu"
 	"SetSecrets/internal/session"
 	"SetSecrets/internal/software"
 	"SetSecrets/internal/target"
@@ -19,6 +20,9 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "wp-tools",
 		Short: "WorldPinball operator and developer CLI toolkit",
+		Run: func(cmd *cobra.Command, args []string) {
+			menu.Run("", "dev")
+		},
 	}
 
 	// Global target selection flags
@@ -27,6 +31,13 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&target.TargetAsp, "asp", false, "Target ASP.NET Core backend (HTTP/gRPC: api.worldpinball.local, default)")
 
 	// Environment & Secrets
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "menu",
+		Short: "Launch the interactive TUI menu hub",
+		Run: func(cmd *cobra.Command, args []string) {
+			menu.Run("", "dev")
+		},
+	})
 	rootCmd.AddCommand(envfile.NewInitCmd())
 	rootCmd.AddCommand(envfile.NewSetCmd())
 	rootCmd.AddCommand(dotnet.NewDotnetCmd())

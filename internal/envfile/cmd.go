@@ -70,7 +70,54 @@ func NewInitCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			if err := InitFromExample(examplePath, destPath, force); err != nil {
+			var selectedKeys []string
+			if isInteractive {
+				exampleEntries, err := LoadFile(examplePath)
+				if err == nil {
+					existingMap := make(map[string]string)
+					if _, err := os.Stat(destPath); err == nil {
+						if existingEntries, err := LoadFile(destPath); err == nil {
+							existingMap = ToMap(existingEntries)
+						}
+					}
+
+					var keyOptions []prompt.KeyOption
+					for _, entry := range exampleEntries {
+						if entry.IsKey && entry.IsSecretKey() {
+							existingVal, exists := existingMap[entry.Key]
+							isSet := exists && existingVal != "CHANGE_ME" && existingVal != ""
+
+							var label string
+							var isSelected bool
+
+							if isSet {
+								label = fmt.Sprintf("%-28s (currently set)", entry.Key)
+								isSelected = force
+							} else {
+								label = fmt.Sprintf("%-28s [NEW / UNSET]", entry.Key)
+								isSelected = true
+							}
+
+							keyOptions = append(keyOptions, prompt.KeyOption{
+								Key:      entry.Key,
+								Label:    label,
+								Selected: isSelected,
+							})
+						}
+					}
+
+					if len(keyOptions) > 0 {
+						chosen, err := prompt.SelectKeysToUpdate("Select secrets to generate / update in .env", keyOptions)
+						if err != nil {
+							fmt.Printf("Secrets selection cancelled: %v\n", err)
+							os.Exit(0)
+						}
+						selectedKeys = chosen
+					}
+				}
+			}
+
+			if err := MergeAndInitFromExample(examplePath, destPath, selectedKeys, force); err != nil {
 				fmt.Printf("Error generating .env file: %v\n", err)
 				os.Exit(1)
 			}

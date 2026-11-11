@@ -2,6 +2,7 @@ package envfile
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -96,5 +97,47 @@ func TestIsSecretKey(t *testing.T) {
 		if got := e.IsSecretKey(); got != tt.isSecret {
 			t.Errorf("IsSecretKey(%q) = %v, want %v", tt.key, got, tt.isSecret)
 		}
+	}
+}
+
+func TestMergeAndInitFromExample(t *testing.T) {
+	exampleContent := `POSTGRES_PASSWORD=CHANGE_ME
+MINIO_ROOT_USER=mediavault_admin
+MINIO_ROOT_PASSWORD=CHANGE_ME
+`
+	existingContent := `POSTGRES_PASSWORD=my_existing_secret_123
+`
+	tmpDir := t.TempDir()
+	examplePath := tmpDir + "/.env.example"
+	destPath := tmpDir + "/.env"
+
+	if err := os.WriteFile(examplePath, []byte(exampleContent), 0644); err != nil {
+		t.Fatalf("failed to write example: %v", err)
+	}
+	if err := os.WriteFile(destPath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("failed to write dest: %v", err)
+	}
+
+	// Only MINIO_ROOT_PASSWORD is selected to be generated. POSTGRES_PASSWORD should be preserved!
+	selected := []string{"MINIO_ROOT_PASSWORD"}
+	err := MergeAndInitFromExample(examplePath, destPath, selected, false)
+	if err != nil {
+		t.Fatalf("MergeAndInitFromExample failed: %v", err)
+	}
+
+	entries, err := LoadFile(destPath)
+	if err != nil {
+		t.Fatalf("LoadFile failed: %v", err)
+	}
+
+	m := ToMap(entries)
+	if m["POSTGRES_PASSWORD"] != "my_existing_secret_123" {
+		t.Errorf("expected POSTGRES_PASSWORD to be preserved as 'my_existing_secret_123', got '%s'", m["POSTGRES_PASSWORD"])
+	}
+	if m["MINIO_ROOT_PASSWORD"] == "CHANGE_ME" || len(m["MINIO_ROOT_PASSWORD"]) < 8 {
+		t.Errorf("expected MINIO_ROOT_PASSWORD to be generated, got '%s'", m["MINIO_ROOT_PASSWORD"])
+	}
+	if m["MINIO_ROOT_USER"] != "mediavault_admin" {
+		t.Errorf("expected MINIO_ROOT_USER to be 'mediavault_admin', got '%s'", m["MINIO_ROOT_USER"])
 	}
 }

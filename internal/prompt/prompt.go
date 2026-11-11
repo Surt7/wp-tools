@@ -8,6 +8,40 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// KeyOption represents a selectable key with a display label and initial state.
+type KeyOption struct {
+	Key      string
+	Label    string
+	Selected bool
+}
+
+// SelectKeysToUpdate displays an interactive multi-select menu with custom labels and pre-selection.
+func SelectKeysToUpdate(title string, keyOptions []KeyOption) ([]string, error) {
+	var selected []string
+
+	var options []huh.Option[string]
+	for _, opt := range keyOptions {
+		options = append(options, huh.NewOption(opt.Label, opt.Key).Selected(opt.Selected))
+	}
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title(title).
+				Description("Space to toggle, Enter to confirm").
+				Options(options...).
+				Value(&selected),
+		),
+	)
+
+	err := form.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	return selected, nil
+}
+
 // SelectKeys displays an interactive multi-select menu to choose keys.
 func SelectKeys(keys []string) ([]string, error) {
 	var selected []string

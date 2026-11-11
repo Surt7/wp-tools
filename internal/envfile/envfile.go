@@ -147,26 +147,70 @@ func ToMap(entries []Entry) map[string]string {
 	return result
 }
 
-// InitFromExample initializes destPath (e.g. .env) from examplePath (.env.example),
-// generating secure random passwords for keys that require them.
-func InitFromExample(examplePath string, destPath string, force bool) error {
-	entries, err := LoadFile(examplePath)
+// MergeAndInitFromExample initializes or updates destPath (.env) from examplePath (.env.example).
+// Existing valid secrets are preserved unless explicitly included in selectedKeysToRegenerate or if force is true.
+func MergeAndInitFromExample(examplePath string, destPath string, selectedKeysToRegenerate []string, force bool) error {
+	exampleEntries, err := LoadFile(examplePath)
 	if err != nil {
 		return fmt.Errorf("loading %s: %w", examplePath, err)
 	}
 
-	for i := range entries {
-		if entries[i].IsKey && entries[i].IsSecretKey() && (entries[i].NeedsValue() || force) {
-			pwd, err := generator.GenerateRandomPassword(24)
-			if err != nil {
-				return fmt.Errorf("generating password for %s: %w", entries[i].Key, err)
-			}
-			entries[i].Value = pwd
+	existingMap := make(map[string]string)
+	if _, err := os.Stat(destPath); err == nil {
+		existingEntries, err := LoadFile(destPath)
+		if err == nil {
+			existingMap = ToMap(existingEntries)
 		}
 	}
 
-	if err := SaveFile(destPath, entries); err != nil {
+	regenerateSet := make(map[string]bool)
+	for _, k := range selectedKeysToRegenerate {
+		regenerateSet[k] = true
+	}
+
+	for i := range exampleEntries {
+		if !exampleEntries[i].IsKey {
+			continue
+		}
+
+		key := exampleEntries[i].Key
+
+		// If explicitly selected by the user for generation
+		if regenerateSet[key] {
+			pwd, err := generator.GenerateRandomPassword(24)
+			if err != nil {
+				return fmt.Errorf("generating password for %s: %w", key, err)
+			}
+			exampleEntries[i].Value = pwd
+			continue
+		}
+
+		// If key already exists in .env with a valid value (not CHANGE_ME and not empty), preserve it!
+		if existingVal, exists := existingMap[key]; exists && existingVal != "CHANGE_ME" && existingVal != "" && !force {
+			exampleEntries[i].Value = existingVal
+			continue
+		}
+
+		// If it's a secret key that needs a value (new key or CHANGE_ME) and we are not in selective mode
+		if exampleEntries[i].IsSecretKey() && (exampleEntries[i].NeedsValue() || force) && len(selectedKeysToRegenerate) == 0 {
+			pwd, err := generator.GenerateRandomPassword(24)
+			if err != nil {
+				return fmt.Errorf("generating password for %s: %w", key, err)
+			}
+			exampleEntries[i].Value = pwd
+		} else if existingVal, exists := existingMap[key]; exists {
+			exampleEntries[i].Value = existingVal
+		}
+	}
+
+	if err := SaveFile(destPath, exampleEntries); err != nil {
 		return fmt.Errorf("saving %s: %w", destPath, err)
 	}
 	return nil
+}
+
+// InitFromExample initializes destPath (e.g. .env) from examplePath (.env.example),
+// generating secure random passwords for keys that require them.
+func InitFromExample(examplePath string, destPath string, force bool) error {
+	return MergeAndInitFromExample(examplePath, destPath, nil, force)
 }

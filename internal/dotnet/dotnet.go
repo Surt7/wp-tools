@@ -39,6 +39,8 @@ func DefaultMapping() map[string]string {
 		"KEYCLOAK_DB_PASSWORD":    "Keycloak:ClientSecret",
 		"KAFKA_PASSWORD":          "Kafka:Password",
 		"MONGO_CONNECTION_STRING": "Mongo:ConnectionString",
+		"MINIO_ROOT_PASSWORD":     "S3:SecretKey",
+		"MINIO_ROOT_USER":         "S3:AccessKey",
 	}
 }
 

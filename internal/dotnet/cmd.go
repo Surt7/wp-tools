@@ -3,8 +3,10 @@ package dotnet
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"SetSecrets/internal/config"
 	"SetSecrets/internal/envfile"
 	"SetSecrets/internal/prompt"
 
@@ -28,13 +30,6 @@ func NewDotnetCmd() *cobra.Command {
 		Short: "Sync .env secrets to .NET User Secrets",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			entries, err := EnsureEnvFile(".env", ".env.example", autoInit, dryRun)
-			if err != nil {
-				fmt.Printf("Error: %v\n", err)
-				os.Exit(1)
-			}
-			envMap := envfile.ToMap(entries)
-
 			// Load targets configuration
 			cfg, err := LoadConfig("")
 			if err != nil {
@@ -44,7 +39,7 @@ func NewDotnetCmd() *cobra.Command {
 
 			// Interactive Huh TUI mode triggered explicitly (-i) or when no target or path is provided
 			isInteractive := interactive || (target == "" && projectPath == "")
-			if isInteractive {
+			if isInteractive && target == "" && projectPath == "" {
 				activeEnv := strings.ToLower(strings.TrimSpace(envName))
 				if activeEnv == "" {
 					activeEnv = cfg.DefaultEnvironment
@@ -66,7 +61,30 @@ func NewDotnetCmd() *cobra.Command {
 					os.Exit(0)
 				}
 				target = selectedTarget
+			}
 
+			resolvedPath, err := ResolveProjectPath(target, projectPath, envName, "")
+			if err != nil {
+				fmt.Printf("Error resolving target: %v\n", err)
+				os.Exit(1)
+			}
+
+			targetEnvDir, err := config.ResolveEnvDir(target, envName, "")
+			if err != nil || targetEnvDir == "" {
+				targetEnvDir = "."
+			}
+
+			envPath := filepath.Join(targetEnvDir, ".env")
+			examplePath := filepath.Join(targetEnvDir, ".env.example")
+
+			entries, err := EnsureEnvFile(envPath, examplePath, autoInit, dryRun)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				os.Exit(1)
+			}
+			envMap := envfile.ToMap(entries)
+
+			if isInteractive {
 				// 2. Choose secrets interactively with Huh multi-select
 				var availableKeys []string
 				mapping := DefaultMapping()
@@ -99,12 +117,6 @@ func NewDotnetCmd() *cobra.Command {
 					os.Exit(0)
 				}
 
-				resolvedPath, err := ResolveProjectPath(target, projectPath, envName, "")
-				if err != nil {
-					fmt.Printf("Error resolving target: %v\n", err)
-					os.Exit(1)
-				}
-
 				if resolvedPath != "" {
 					if _, err := os.Stat(resolvedPath); err != nil {
 						fmt.Printf("Error: project file not found on disk at '%s'\nPlease check the path in %s\n", resolvedPath, ConfigFileName)
@@ -129,7 +141,7 @@ func NewDotnetCmd() *cobra.Command {
 			}
 
 			// CLI Non-Interactive Mode
-			resolvedPath, err := ResolveProjectPath(target, projectPath, envName, "")
+			resolvedPath, err = ResolveProjectPath(target, projectPath, envName, "")
 			if err != nil {
 				fmt.Printf("Error resolving target: %v\n", err)
 				os.Exit(1)
